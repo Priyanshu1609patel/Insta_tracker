@@ -103,7 +103,7 @@ async function scrapeViaWebSession(mediaId, shortcode) {
     'AppleWebKit/537.36 (KHTML, like Gecko) ' +
     'Chrome/120.0.0.0 Safari/537.36';
 
-  // Attempt A: i.instagram.com mobile API (correct host for /api/v1/)
+  // Attempt A: Instagram mobile API with mediaId
   try {
     const res = await axios.get(
       `https://i.instagram.com/api/v1/media/${mediaId}/info/`,
@@ -111,30 +111,23 @@ async function scrapeViaWebSession(mediaId, shortcode) {
         headers: {
           Cookie: cookieHeader,
           'X-IG-App-ID': '936619743392459',
-          'X-ASBD-ID': '198387',
-          'User-Agent': 'Instagram 278.0.0.19.115 Android',
+          'User-Agent': 'Instagram 278.0.0.19.115 Android (33/13; 420dpi; 1080x2400; samsung; SM-G991B; o1s; exynos2100; en_US; 460516050)',
           Accept: '*/*',
           'Accept-Language': 'en-US',
         },
-        maxRedirects: 0,
+        maxRedirects: 5,
         timeout: 15000,
       }
     );
     const item = res.data?.items?.[0];
     if (item) {
-      const views =
-        item.view_count ?? item.play_count ??
-        item.video_view_count ?? item.ig_play_count ?? 0;
+      const views = item.play_count ?? item.view_count ?? item.video_view_count ?? item.ig_play_count ?? 0;
+      console.log(`[WebSession-A] got ${views} views`);
       return parseInt(views) || 0;
     }
   } catch (err) {
-    const status = err.response?.status;
-    console.log(`[WebSession-A] status=${status} error=${err.message}`);
-    if (status === 401 || status === 403) {
-      console.log('[WebSession] ❌ Session expired — update it in Settings');
-      return null;
-    }
-    // fall through to Attempt B for any error including 400
+    console.log(`[WebSession-A] status=${err.response?.status} error=${err.message}`);
+    if (err.response?.status === 401 || err.response?.status === 403) return null;
   }
 
   // Attempt B: parse view count from the reel's HTML page
@@ -147,27 +140,29 @@ async function scrapeViaWebSession(mediaId, shortcode) {
           'User-Agent': browserAgent,
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.9',
+          Referer: 'https://www.instagram.com/',
         },
         timeout: 15000,
       }
     );
     const html = res.data;
+    console.log(`[WebSession-B] got HTML length=${html.length}`);
     const patterns = [
-      /"video_view_count"\s*:\s*(\d+)/,
-      /"view_count"\s*:\s*(\d+)/,
-      /"play_count"\s*:\s*(\d+)/,
-      /"ig_play_count"\s*:\s*(\d+)/,
+      /"play_count":(\d+)/,
+      /"video_view_count":(\d+)/,
+      /"view_count":(\d+)/,
+      /"ig_play_count":(\d+)/,
     ];
     for (const pattern of patterns) {
       const m = html.match(pattern);
-      if (m) return parseInt(m[1]);
+      if (m) {
+        console.log(`[WebSession-B] found ${m[1]} views`);
+        return parseInt(m[1]);
+      }
     }
+    console.log('[WebSession-B] no view count found in HTML');
   } catch (err) {
-    const status = err.response?.status;
-    console.log(`[WebSession-B] status=${status} error=${err.message}`);
-    if (status === 401 || status === 403) {
-      console.log('[WebSession] ❌ Session expired — update it in Settings');
-    }
+    console.log(`[WebSession-B] status=${err.response?.status} error=${err.message}`);
   }
 
   return null;
