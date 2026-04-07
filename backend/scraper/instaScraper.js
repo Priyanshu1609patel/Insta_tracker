@@ -129,6 +129,7 @@ async function scrapeViaWebSession(mediaId, shortcode) {
     }
   } catch (err) {
     const status = err.response?.status;
+    console.log(`[WebSession-A] status=${status} error=${err.message}`);
     if (status === 401 || status === 403) {
       console.log('[WebSession] ❌ Session expired — update it in Settings');
       return null;
@@ -163,10 +164,9 @@ async function scrapeViaWebSession(mediaId, shortcode) {
     }
   } catch (err) {
     const status = err.response?.status;
+    console.log(`[WebSession-B] status=${status} error=${err.message}`);
     if (status === 401 || status === 403) {
       console.log('[WebSession] ❌ Session expired — update it in Settings');
-    } else {
-      console.log(`[WebSession] ${err.message}`);
     }
   }
 
