@@ -29,6 +29,7 @@ function getStatus() {
     hasSession: !!sessionId,
     sessionPreview: sessionId ? sessionId.substring(0, 8) + '...' : null,
     rapidApiEnabled: !!process.env.RAPIDAPI_KEY,
+    scraperApiEnabled: !!process.env.SCRAPER_API_KEY,
   };
 }
 
@@ -93,6 +94,20 @@ async function checkSessionHealth() {
 // ─────────────────────────────────────────────────────────────
 // Method 1 — Instagram Web Session Cookie (FREE, no rate limit)
 // ─────────────────────────────────────────────────────────────
+// Build axios config — routes through ScraperAPI if key is set
+function buildRequestConfig(targetUrl, headers, useScraperApi = true) {
+  const scraperKey = process.env.SCRAPER_API_KEY;
+  if (useScraperApi && scraperKey) {
+    return {
+      url: `http://api.scraperapi.com`,
+      params: { api_key: scraperKey, url: targetUrl, keep_headers: 'true' },
+      headers,
+      timeout: 20000,
+    };
+  }
+  return { url: targetUrl, headers, maxRedirects: 5, timeout: 15000 };
+}
+
 async function scrapeViaWebSession(mediaId, shortcode) {
   const sessionId = getSessionId();
   if (!sessionId) return null;
@@ -105,20 +120,17 @@ async function scrapeViaWebSession(mediaId, shortcode) {
 
   // Attempt A: Instagram mobile API with mediaId
   try {
-    const res = await axios.get(
+    const config = buildRequestConfig(
       `https://i.instagram.com/api/v1/media/${mediaId}/info/`,
       {
-        headers: {
-          Cookie: cookieHeader,
-          'X-IG-App-ID': '936619743392459',
-          'User-Agent': 'Instagram 278.0.0.19.115 Android (33/13; 420dpi; 1080x2400; samsung; SM-G991B; o1s; exynos2100; en_US; 460516050)',
-          Accept: '*/*',
-          'Accept-Language': 'en-US',
-        },
-        maxRedirects: 5,
-        timeout: 15000,
+        Cookie: cookieHeader,
+        'X-IG-App-ID': '936619743392459',
+        'User-Agent': 'Instagram 278.0.0.19.115 Android (33/13; 420dpi; 1080x2400; samsung; SM-G991B; o1s; exynos2100; en_US; 460516050)',
+        Accept: '*/*',
+        'Accept-Language': 'en-US',
       }
     );
+    const res = await axios.get(config.url, config);
     const item = res.data?.items?.[0];
     if (item) {
       const views = item.play_count ?? item.view_count ?? item.video_view_count ?? item.ig_play_count ?? 0;
@@ -132,19 +144,17 @@ async function scrapeViaWebSession(mediaId, shortcode) {
 
   // Attempt B: parse view count from the reel's HTML page
   try {
-    const res = await axios.get(
+    const config = buildRequestConfig(
       `https://www.instagram.com/reel/${shortcode}/`,
       {
-        headers: {
-          Cookie: cookieHeader,
-          'User-Agent': browserAgent,
-          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-          Referer: 'https://www.instagram.com/',
-        },
-        timeout: 15000,
+        Cookie: cookieHeader,
+        'User-Agent': browserAgent,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        Referer: 'https://www.instagram.com/',
       }
     );
+    const res = await axios.get(config.url, config);
     const html = res.data;
     console.log(`[WebSession-B] got HTML length=${html.length}`);
     const patterns = [
