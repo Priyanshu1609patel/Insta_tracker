@@ -17,11 +17,13 @@ async function syncAllReelViews() {
   console.log(`[Sync] Starting view sync at ${new Date().toISOString()}`);
 
   try {
-    // Get all active reels
+    // Get active reels not synced in the last 2 hours
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
     const { data: reels, error } = await supabase
       .from('reels')
       .select('id, reel_url, views')
       .eq('status', 'active')
+      .or(`last_updated.is.null,last_updated.lt.${twoHoursAgo}`)
       .order('last_updated', { ascending: true });
 
     if (error) throw error;
@@ -33,12 +35,19 @@ async function syncAllReelViews() {
     console.log(`[Sync] Syncing ${reels.length} reels...`);
     let successCount = 0;
     let failCount = 0;
+    let consecutiveFails = 0;
 
     for (const reel of reels) {
+      if (consecutiveFails >= 3) {
+        console.log('[Sync] 3 consecutive failures — Instagram likely blocking. Stopping batch.');
+        break;
+      }
+
       try {
         const views = await scrapeReelViews(reel.reel_url);
 
         if (views !== null) {
+          consecutiveFails = 0;
           await supabase
             .from('reels')
             .update({ views, last_updated: new Date().toISOString() })
@@ -63,6 +72,7 @@ async function syncAllReelViews() {
           console.log(`[Sync] ✓ ${reel.reel_url} → ${views} views`);
         } else {
           failCount++;
+          consecutiveFails++;
 
           await supabase.from('sync_logs').insert([{
             reel_id: reel.id,
@@ -79,6 +89,7 @@ async function syncAllReelViews() {
         await new Promise(r => setTimeout(r, 3000 + Math.random() * 3000));
       } catch (reelErr) {
         failCount++;
+        consecutiveFails++;
         console.error(`[Sync] Error for reel ${reel.id}:`, reelErr.message);
       }
     }

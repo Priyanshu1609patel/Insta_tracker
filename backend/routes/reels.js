@@ -150,10 +150,16 @@ router.post('/sync-client', auth, async (req, res) => {
     // Respond immediately — scrape runs in background
     res.json({ message: 'Sync started', count });
 
+    let consecutiveFails = 0;
     for (const reel of reels) {
+      if (consecutiveFails >= 3) {
+        console.log('[BatchSync] 3 consecutive failures — stopping batch.');
+        break;
+      }
       try {
         const views = await scrapeReelViews(reel.reel_url);
         if (views !== null) {
+          consecutiveFails = 0;
           await supabase.from('reels')
             .update({ views, last_updated: new Date().toISOString() })
             .eq('id', reel.id);
@@ -163,10 +169,13 @@ router.post('/sync-client', auth, async (req, res) => {
             message: 'Batch sync by creator',
             views_before: reel.views, views_after: views,
           }]);
+        } else {
+          consecutiveFails++;
         }
-        // Small delay between reels to avoid rate limiting
-        await new Promise(r => setTimeout(r, 300));
+        // Delay between reels to avoid Instagram rate limiting
+        await new Promise(r => setTimeout(r, 3000 + Math.random() * 3000));
       } catch (e) {
+        consecutiveFails++;
         console.error('[BatchSync] reel error:', e.message);
       }
     }
