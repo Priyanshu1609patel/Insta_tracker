@@ -95,19 +95,26 @@ async function checkSessionHealth() {
 // Method 1 — Instagram Web Session Cookie (FREE, no rate limit)
 // ─────────────────────────────────────────────────────────────
 // Build axios config — routes through ScraperAPI if key is set
-function buildRequestConfig(targetUrl, headers) {
-  const scraperKey = process.env.SCRAPER_API_KEY;
-  if (scraperKey) {
-    console.log(`[ScraperAPI] Routing via residential IP → ${targetUrl}`);
-    return {
-      url: `http://api.scraperapi.com`,
-      params: { api_key: scraperKey, url: targetUrl, keep_headers: 'true' },
-      headers,
-      timeout: 20000,
-    };
+async function fetchWithFallback(targetUrl, headers) {
+  // Always try direct first (cookie works, no proxy stripping)
+  try {
+    const res = await axios.get(targetUrl, { headers, maxRedirects: 5, timeout: 15000 });
+    return res;
+  } catch (directErr) {
+    const status = directErr.response?.status;
+    // Only fall back to ScraperAPI on IP-based blocks (429 or no response)
+    const scraperKey = process.env.SCRAPER_API_KEY;
+    if (scraperKey && (status === 429 || !status)) {
+      console.log(`[ScraperAPI] Direct blocked (${status}) — retrying via residential IP`);
+      const res = await axios.get('http://api.scraperapi.com', {
+        params: { api_key: scraperKey, url: targetUrl },
+        headers,
+        timeout: 25000,
+      });
+      return res;
+    }
+    throw directErr;
   }
-  console.log(`[Direct] No ScraperAPI key — hitting Instagram directly`);
-  return { url: targetUrl, headers, maxRedirects: 5, timeout: 15000 };
 }
 
 async function scrapeViaWebSession(mediaId, shortcode) {
@@ -122,7 +129,7 @@ async function scrapeViaWebSession(mediaId, shortcode) {
 
   // Attempt A: Instagram mobile API with mediaId
   try {
-    const config = buildRequestConfig(
+    const res = await fetchWithFallback(
       `https://i.instagram.com/api/v1/media/${mediaId}/info/`,
       {
         Cookie: cookieHeader,
@@ -132,7 +139,6 @@ async function scrapeViaWebSession(mediaId, shortcode) {
         'Accept-Language': 'en-US',
       }
     );
-    const res = await axios.get(config.url, config);
     const item = res.data?.items?.[0];
     if (item) {
       const views = item.play_count ?? item.view_count ?? item.video_view_count ?? item.ig_play_count ?? 0;
@@ -147,7 +153,7 @@ async function scrapeViaWebSession(mediaId, shortcode) {
 
   // Attempt B: parse view count from the reel's HTML page
   try {
-    const config = buildRequestConfig(
+    const res = await fetchWithFallback(
       `https://www.instagram.com/reel/${shortcode}/`,
       {
         Cookie: cookieHeader,
@@ -157,7 +163,6 @@ async function scrapeViaWebSession(mediaId, shortcode) {
         Referer: 'https://www.instagram.com/',
       }
     );
-    const res = await axios.get(config.url, config);
     const html = res.data;
     console.log(`[WebSession-B] got HTML length=${html.length}`);
     const patterns = [
