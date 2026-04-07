@@ -134,7 +134,7 @@ async function scrapeViaWebSession(mediaId, shortcode) {
       console.log('[WebSession] ❌ Session expired — update it in Settings');
       return null;
     }
-    // 3xx redirect or other error → fall through to Attempt B
+    // fall through to Attempt B for any error including 400
   }
 
   // Attempt B: parse view count from the reel's HTML page
