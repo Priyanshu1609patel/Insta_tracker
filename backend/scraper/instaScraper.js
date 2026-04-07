@@ -95,9 +95,10 @@ async function checkSessionHealth() {
 // Method 1 — Instagram Web Session Cookie (FREE, no rate limit)
 // ─────────────────────────────────────────────────────────────
 // Build axios config — routes through ScraperAPI if key is set
-function buildRequestConfig(targetUrl, headers, useScraperApi = true) {
+function buildRequestConfig(targetUrl, headers) {
   const scraperKey = process.env.SCRAPER_API_KEY;
-  if (useScraperApi && scraperKey) {
+  if (scraperKey) {
+    console.log(`[ScraperAPI] Routing via residential IP → ${targetUrl}`);
     return {
       url: `http://api.scraperapi.com`,
       params: { api_key: scraperKey, url: targetUrl, keep_headers: 'true' },
@@ -105,6 +106,7 @@ function buildRequestConfig(targetUrl, headers, useScraperApi = true) {
       timeout: 20000,
     };
   }
+  console.log(`[Direct] No ScraperAPI key — hitting Instagram directly`);
   return { url: targetUrl, headers, maxRedirects: 5, timeout: 15000 };
 }
 
@@ -139,7 +141,8 @@ async function scrapeViaWebSession(mediaId, shortcode) {
     }
   } catch (err) {
     console.log(`[WebSession-A] status=${err.response?.status} error=${err.message}`);
-    if (err.response?.status === 401 || err.response?.status === 403) return null;
+    // Don't return early on 403 — mobile API may be blocked but web page might still work
+    if (err.response?.status === 401) return null;
   }
 
   // Attempt B: parse view count from the reel's HTML page
