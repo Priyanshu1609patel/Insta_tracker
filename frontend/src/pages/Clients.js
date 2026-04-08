@@ -74,9 +74,9 @@ export default function Clients() {
 
   return (
     <Layout>
-      <div style={{ padding: '32px', maxWidth: '1000px' }}>
+      <div className="page-pad" style={{ maxWidth: '1000px' }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+        <div className="page-header" style={{ marginBottom: '28px' }}>
           <div>
             <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Clients</h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>

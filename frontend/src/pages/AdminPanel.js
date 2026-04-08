@@ -202,11 +202,23 @@ export default function AdminPanel() {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window === 'undefined' || window.innerWidth >= 768);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      setSidebarOpen(!mobile);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     API.get('/admin/users')
@@ -219,12 +231,27 @@ export default function AdminPanel() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
+
+      {/* Backdrop — mobile only */}
+      {isMobile && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 98 }}
+        />
+      )}
+
       {/* Sidebar */}
       <aside style={{
-        width: '220px', background: 'var(--bg-card)',
+        width: isMobile ? '240px' : '220px',
+        background: 'var(--bg-card)',
         borderRight: '1px solid var(--border)',
         display: 'flex', flexDirection: 'column',
-        flexShrink: 0, position: 'sticky', top: 0, height: '100vh',
+        flexShrink: 0,
+        position: isMobile ? 'fixed' : 'sticky',
+        top: 0, left: 0, height: '100vh',
+        zIndex: isMobile ? 99 : 'auto',
+        transform: isMobile ? (sidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
+        transition: isMobile ? 'transform 0.25s ease' : 'none',
       }}>
         {/* Logo */}
         <div style={{ padding: '18px 14px', borderBottom: '1px solid var(--border)' }}>
@@ -288,8 +315,23 @@ export default function AdminPanel() {
       </aside>
 
       {/* Main content */}
-      <main style={{ flex: 1, overflow: 'auto', background: 'var(--bg)', padding: '32px' }}>
-        <div style={{ maxWidth: '1000px' }}>
+      <main style={{ flex: 1, overflow: 'auto', background: 'var(--bg)', minWidth: 0 }}>
+        {/* Mobile top bar */}
+        <div className="mobile-topbar">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', fontSize: '20px', padding: '4px 6px', display: 'flex', alignItems: 'center' }}
+          >☰</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '7px', background: 'var(--gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>📸</div>
+            <span style={{ fontWeight: 700, fontSize: '14px' }}>Admin Panel</span>
+          </div>
+          <button
+            onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', padding: '4px' }}
+          >{theme === 'dark' ? '☀️' : '🌙'}</button>
+        </div>
+        <div className="page-pad" style={{ maxWidth: '1000px' }}>
           {/* Header */}
           <div style={{ marginBottom: '28px' }}>
             <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Admin Panel</h1>

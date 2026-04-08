@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import CurrencyDropdown from '../components/CurrencyDropdown';
 import API from '../utils/api';
-import { formatViews, formatCurrency, exactViews, exactCurrency, timeAgo } from '../utils/format';
+import { formatViews, formatCurrency, exactViews, exactCurrency, timeAgo, formatDate } from '../utils/format';
+import { useCurrency } from '../hooks/useCurrency';
 
 // ── Number format dropdown ────────────────────────────────────
 const FORMAT_OPTIONS = [
@@ -127,9 +129,61 @@ function ConfirmUpdateModal({ oldViews, newViews, onConfirm, onCancel, saving })
   );
 }
 
+// ── Confirm Date Modal ────────────────────────────────────────
+function ConfirmDateModal({ oldDate, newDate, onConfirm, onCancel, saving }) {
+  const fmt = d => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 1000, padding: '16px',
+    }}>
+      <div style={{
+        background: 'var(--bg-card)', border: '1px solid var(--border)',
+        borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '400px',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+      }}>
+        <div style={{ fontSize: '22px', marginBottom: '10px', textAlign: 'center' }}>📅</div>
+        <h3 style={{ fontSize: '17px', fontWeight: 700, textAlign: 'center', marginBottom: '6px' }}>
+          Update Reel Date?
+        </h3>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '20px' }}>
+          Are you sure you want to change the date for this reel?
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '22px' }}>
+          <div style={{
+            background: 'var(--bg-card2)', border: '1px solid var(--border)',
+            borderRadius: '10px', padding: '12px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Current Date</div>
+            <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-muted)' }}>{fmt(oldDate)}</div>
+          </div>
+          <div style={{
+            background: 'rgba(225,48,108,0.08)', border: '1px solid rgba(225,48,108,0.3)',
+            borderRadius: '10px', padding: '12px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>New Date</div>
+            <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--primary)' }}>{fmt(newDate)}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="btn btn-secondary" onClick={onCancel} disabled={saving} style={{ flex: 1 }}>
+            Cancel
+          </button>
+          <button className="btn btn-primary" onClick={onConfirm} disabled={saving} style={{ flex: 1 }}>
+            {saving ? <span className="spinner" /> : 'Yes, Update'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Reel row ──────────────────────────────────────────────────
-function ReelRow({ reel, fmt, syncingId, onSync, onDelete, editingViews, setEditingViews, onRequestSave, savingViews }) {
+function ReelRow({ reel, fmt, currency, exchangeRate, syncingId, onSync, onDelete, editingViews, setEditingViews, onRequestSave, savingViews, editingDate, setEditingDate, onRequestDateSave }) {
   const isEditing = editingViews?.reelId === reel.id;
+  const isEditingDate = editingDate?.reelId === reel.id;
+  const todayStr = new Date().toISOString().split('T')[0];
   const shortUrl = reel.reel_url.replace('https://www.', '').replace('https://', '').split('?')[0];
   const isPending  = reel._pending;   // just added, awaiting server
   const isSyncing  = reel._syncing;   // server saved, awaiting view scrape
@@ -205,11 +259,51 @@ function ReelRow({ reel, fmt, syncingId, onSync, onDelete, editingViews, setEdit
       {/* Earnings */}
       <td>
         <div style={{ color: 'var(--success)', fontWeight: 700, fontSize: '14px' }}>
-          {formatCurrency(reel.earnings, fmt)}
+          {formatCurrency(reel.earnings, fmt, currency, exchangeRate)}
         </div>
         {fmt !== 'exact' && (
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
-            {exactCurrency(reel.earnings)}
+            {exactCurrency(reel.earnings, currency, exchangeRate)}
+          </div>
+        )}
+      </td>
+
+      {/* Date */}
+      <td style={{ whiteSpace: 'nowrap' }}>
+        {isEditingDate ? (
+          <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+            <input
+              type="date"
+              className="input input-date"
+              style={{ padding: '4px 8px', fontSize: '12px' }}
+              value={editingDate.value}
+              max={todayStr}
+              onChange={e => setEditingDate({ ...editingDate, value: e.target.value })}
+              onKeyDown={e => { if (e.key === 'Enter') onRequestDateSave(reel); if (e.key === 'Escape') setEditingDate(null); }}
+              onClick={e => { try { e.target.showPicker(); } catch {} }}
+              autoFocus
+            />
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => onRequestDateSave(reel)}
+              title="Save date"
+            >✓</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => setEditingDate(null)}>✕</button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              {reel.reel_date
+                ? new Date(reel.reel_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                : '—'}
+            </span>
+            {!reel._pending && (
+              <button
+                onClick={() => setEditingDate({ reelId: reel.id, value: reel.reel_date || todayStr })}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '11px', padding: '1px 3px' }}
+                title="Edit date"
+              >✏️</button>
+            )}
           </div>
         )}
       </td>
@@ -249,14 +343,18 @@ function ReelRow({ reel, fmt, syncingId, onSync, onDelete, editingViews, setEdit
 export default function ClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { currency, changeCurrency, exchangeRate, lastUpdated, loading: currencyLoading } = useCurrency();
 
   const [client, setClient] = useState(null);
   const [reels, setReels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fmt, setFmt] = useState(() => localStorage.getItem('numFmt') || 'indian');
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
   const [showAddReel, setShowAddReel] = useState(false);
   const [reelUrl, setReelUrl] = useState('');
+  const [reelDate, setReelDate] = useState(todayStr);
   const [addError, setAddError] = useState('');
   const [addLoading, setAddLoading] = useState(false);
 
@@ -268,6 +366,10 @@ export default function ClientDetail() {
   const [editingViews, setEditingViews] = useState(null);   // { reelId, value, oldValue }
   const [confirmUpdate, setConfirmUpdate] = useState(null); // { reel }
   const [savingViews, setSavingViews] = useState(false);
+
+  const [editingDate, setEditingDate] = useState(null);       // { reelId, value }
+  const [confirmDateUpdate, setConfirmDateUpdate] = useState(null); // { reel }
+  const [savingDate, setSavingDate] = useState(false);
 
   const fetchClient = async () => {
     try {
@@ -287,10 +389,11 @@ export default function ClientDetail() {
 
   const handleAddReel = async (e) => {
     e.preventDefault();
-    if (!reelUrl.trim()) return;
+    if (!reelUrl.trim() || !reelDate) return;
     setAddError('');
 
     const urlToAdd = reelUrl.trim();
+    const dateToAdd = reelDate;
     const tempId = 'temp_' + Date.now();
 
     // Optimistic: show reel instantly with 0 views + syncing indicator
@@ -299,6 +402,7 @@ export default function ClientDetail() {
       reel_url: urlToAdd,
       views: 0,
       earnings: 0,
+      reel_date: dateToAdd,
       last_updated: new Date().toISOString(),
       _pending: true,
     }, ...prev]);
@@ -306,7 +410,7 @@ export default function ClientDetail() {
     setShowAddReel(false);
 
     try {
-      const res = await API.post('/reels', { client_id: id, reel_url: urlToAdd });
+      const res = await API.post('/reels', { client_id: id, reel_url: urlToAdd, reel_date: dateToAdd });
       // Backend returns { reel, message } — extract the reel object
       const saved = res.data.reel || res.data;
 
@@ -339,6 +443,7 @@ export default function ClientDetail() {
       setReels(prev => prev.filter(r => r.id !== tempId));
       setShowAddReel(true);
       setReelUrl(urlToAdd);
+      setReelDate(dateToAdd);
       setAddError(err.response?.data?.error || 'Failed to add reel');
     }
   };
@@ -424,6 +529,25 @@ export default function ClientDetail() {
     }
   };
 
+  const handleRequestDateSave = (reel) => {
+    setConfirmDateUpdate({ reel });
+  };
+
+  const handleConfirmDateSave = async () => {
+    const { reel } = confirmDateUpdate;
+    setSavingDate(true);
+    try {
+      await API.put(`/reels/${reel.id}/date`, { reel_date: editingDate.value });
+      setEditingDate(null);
+      setConfirmDateUpdate(null);
+      fetchClient();
+    } catch {
+      alert('Failed to update date');
+    } finally {
+      setSavingDate(false);
+    }
+  };
+
   const handleDeleteReel = async (reelId) => {
     if (!window.confirm('Delete this reel?')) return;
     try {
@@ -458,7 +582,18 @@ export default function ClientDetail() {
         />
       )}
 
-      <div style={{ padding: '28px', maxWidth: '1100px', margin: '0 auto' }}>
+      {/* Confirm date update modal */}
+      {confirmDateUpdate && (
+        <ConfirmDateModal
+          oldDate={confirmDateUpdate.reel.reel_date}
+          newDate={editingDate?.value}
+          onConfirm={handleConfirmDateSave}
+          onCancel={() => setConfirmDateUpdate(null)}
+          saving={savingDate}
+        />
+      )}
+
+      <div className="page-pad-sm" style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
         {/* Back */}
         <button
@@ -488,11 +623,20 @@ export default function ClientDetail() {
               )}
             </div>
           </div>
-          <FormatDropdown value={fmt} onChange={handleFmtChange} />
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <CurrencyDropdown 
+              currency={currency} 
+              onChange={changeCurrency} 
+              exchangeRate={exchangeRate}
+              loading={currencyLoading}
+              lastUpdated={lastUpdated}
+            />
+            <FormatDropdown value={fmt} onChange={handleFmtChange} />
+          </div>
         </div>
 
         {/* ── Stat Cards ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '20px' }}>
+        <div className="grid-3" style={{ marginBottom: '20px' }}>
           <StatCard
             icon="🎬" label="Total Reels" color="#833AB4"
             formatted={reels.length.toString()}
@@ -505,8 +649,8 @@ export default function ClientDetail() {
           />
           <StatCard
             icon="💰" label="Total Earnings" color="#22c55e"
-            formatted={formatCurrency(totalEarnings, fmt)}
-            exact={exactCurrency(totalEarnings)}
+            formatted={formatCurrency(totalEarnings, fmt, currency, exchangeRate)}
+            exact={exactCurrency(totalEarnings, currency, exchangeRate)}
           />
         </div>
 
@@ -561,17 +705,30 @@ export default function ClientDetail() {
             }}>
               <div style={{ fontWeight: 600, marginBottom: '10px', fontSize: '14px' }}>Add Instagram Reel</div>
               {addError && <div className="alert alert-error">{addError}</div>}
-              <form onSubmit={handleAddReel} style={{ display: 'flex', gap: '8px' }}>
+              <form onSubmit={handleAddReel}>
                 <input
                   className="input"
                   placeholder="https://www.instagram.com/reel/..."
                   value={reelUrl}
                   onChange={e => setReelUrl(e.target.value)}
-                  required style={{ flex: 1 }}
+                  required
+                  style={{ width: '100%', marginBottom: '8px', boxSizing: 'border-box' }}
                 />
-                <button type="submit" className="btn btn-primary" disabled={addLoading}>
-                  {addLoading ? <span className="spinner" /> : 'Add'}
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Date:</label>
+                  <input
+                    type="date"
+                    className="input input-date"
+                    value={reelDate}
+                    onChange={e => setReelDate(e.target.value)}
+                    max={todayStr}
+                    required
+                    onClick={e => { try { e.target.showPicker(); } catch {} }}
+                  />
+                  <button type="submit" className="btn btn-primary" disabled={addLoading}>
+                    {addLoading ? <span className="spinner" /> : 'Add'}
+                  </button>
+                </div>
               </form>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>
                 Views are fetched automatically. Use ✏️ to enter manually if auto-sync fails.
@@ -602,6 +759,7 @@ export default function ClientDetail() {
                       </div>
                     </th>
                     <th>Earnings</th>
+                    <th>Date</th>
                     <th>Last Updated</th>
                     <th>Actions</th>
                   </tr>
@@ -612,6 +770,8 @@ export default function ClientDetail() {
                       key={reel.id}
                       reel={reel}
                       fmt={fmt}
+                      currency={currency}
+                      exchangeRate={exchangeRate}
                       syncingId={syncingId}
                       onSync={handleSync}
                       onDelete={handleDeleteReel}
@@ -619,6 +779,9 @@ export default function ClientDetail() {
                       setEditingViews={setEditingViews}
                       onRequestSave={handleRequestSave}
                       savingViews={savingViews}
+                      editingDate={editingDate}
+                      setEditingDate={setEditingDate}
+                      onRequestDateSave={handleRequestDateSave}
                     />
                   ))}
                 </tbody>
@@ -644,10 +807,10 @@ export default function ClientDetail() {
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>Total Earnings</div>
                 <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--success)' }}>
-                  {formatCurrency(totalEarnings, fmt)}
+                  {formatCurrency(totalEarnings, fmt, currency, exchangeRate)}
                 </div>
                 {fmt !== 'exact' && (
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{exactCurrency(totalEarnings)}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{exactCurrency(totalEarnings, currency, exchangeRate)}</div>
                 )}
               </div>
             </div>

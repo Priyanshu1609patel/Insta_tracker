@@ -9,6 +9,12 @@ export default function CreatorUsers() {
   const [showForm, setShowForm] = useState(false);
   const [deleting, setDeleting] = useState(null);
 
+  // Password update state
+  const [editingPassword, setEditingPassword] = useState(null); // { userId, userName }
+  const [newPassword, setNewPassword] = useState('');
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState(null); // { userId, text, ok }
+
   // Form state
   const [form, setForm] = useState({ name: '', email: '', password: '', client_id: '' });
   const [saving, setSaving]   = useState(false);
@@ -60,11 +66,32 @@ export default function CreatorUsers() {
     }
   };
 
+  const handleUpdatePassword = async (userId) => {
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordMsg({ userId, text: 'Password must be at least 6 characters', ok: false });
+      setTimeout(() => setPasswordMsg(null), 3000);
+      return;
+    }
+    setUpdatingPassword(true);
+    try {
+      const res = await API.put(`/creator/users/${userId}/password`, { password: newPassword });
+      setPasswordMsg({ userId, text: res.data.message, ok: true });
+      setEditingPassword(null);
+      setNewPassword('');
+      setTimeout(() => setPasswordMsg(null), 4000);
+    } catch (err) {
+      setPasswordMsg({ userId, text: err.response?.data?.error || 'Failed to update password', ok: false });
+      setTimeout(() => setPasswordMsg(null), 3000);
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   return (
     <Layout>
-      <div style={{ padding: '28px', maxWidth: '900px', margin: '0 auto' }}>
+      <div className="page-pad-sm" style={{ maxWidth: '900px', margin: '0 auto' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
@@ -93,7 +120,7 @@ export default function CreatorUsers() {
             <h2 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '18px' }}>New Client User</h2>
             {formErr && <div className="alert alert-error" style={{ marginBottom: '14px' }}>{formErr}</div>}
             <form onSubmit={handleCreate}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+              <div className="grid-2" style={{ marginBottom: '14px' }}>
                 <div>
                   <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
                     Name *
@@ -205,46 +232,102 @@ export default function CreatorUsers() {
                     <th>Email</th>
                     <th>Client Access</th>
                     <th>Created</th>
-                    <th>Action</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((u, i) => (
-                    <tr key={u.id}>
-                      <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{i + 1}</td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{
-                            width: '30px', height: '30px', borderRadius: '8px',
-                            background: 'var(--gradient)', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center',
-                            color: '#fff', fontWeight: 700, fontSize: '12px', flexShrink: 0,
-                          }}>
-                            {u.name?.charAt(0).toUpperCase()}
+                    <React.Fragment key={u.id}>
+                      <tr>
+                        <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{i + 1}</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                              width: '30px', height: '30px', borderRadius: '8px',
+                              background: 'var(--gradient)', display: 'flex',
+                              alignItems: 'center', justifyContent: 'center',
+                              color: '#fff', fontWeight: 700, fontSize: '12px', flexShrink: 0,
+                            }}>
+                              {u.name?.charAt(0).toUpperCase()}
+                            </div>
+                            <span style={{ fontWeight: 600, fontSize: '13px' }}>{u.name}</span>
                           </div>
-                          <span style={{ fontWeight: 600, fontSize: '13px' }}>{u.name}</span>
-                        </div>
-                      </td>
-                      <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{u.email}</td>
-                      <td>
-                        <span className="badge" style={{ background: 'rgba(225,48,108,0.12)', color: 'var(--primary)', fontWeight: 600 }}>
-                          {u.client_name}
-                        </span>
-                      </td>
-                      <td style={{ color: 'var(--text-muted)', fontSize: '12px', whiteSpace: 'nowrap' }}>
-                        {new Date(u.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </td>
-                      <td>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleDelete(u.id, u.name)}
-                          disabled={deleting === u.id}
-                          style={{ padding: '5px 10px' }}
-                        >
-                          {deleting === u.id ? <span className="spinner" style={{ width: 11, height: 11 }} /> : '🗑️'}
-                        </button>
-                      </td>
-                    </tr>
+                        </td>
+                        <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{u.email}</td>
+                        <td>
+                          <span className="badge" style={{ background: 'rgba(225,48,108,0.12)', color: 'var(--primary)', fontWeight: 600 }}>
+                            {u.client_name}
+                          </span>
+                        </td>
+                        <td style={{ color: 'var(--text-muted)', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                          {new Date(u.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => {
+                                setEditingPassword({ userId: u.id, userName: u.name });
+                                setNewPassword('');
+                                setPasswordMsg(null);
+                              }}
+                              title="Change password"
+                              style={{ padding: '5px 10px' }}
+                            >
+                              🔑
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDelete(u.id, u.name)}
+                              disabled={deleting === u.id}
+                              style={{ padding: '5px 10px' }}
+                            >
+                              {deleting === u.id ? <span className="spinner" style={{ width: 11, height: 11 }} /> : '🗑️'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      
+                      {/* Password update row */}
+                      {editingPassword?.userId === u.id && (
+                        <tr>
+                          <td colSpan="6" style={{ padding: '12px 16px', background: 'var(--bg-card2)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>
+                                Update password for {editingPassword.userName}:
+                              </span>
+                              <input
+                                type="password"
+                                className="input"
+                                placeholder="New password (min 6 characters)"
+                                value={newPassword}
+                                onChange={e => setNewPassword(e.target.value)}
+                                style={{ flex: 1, minWidth: '200px', maxWidth: '300px' }}
+                                autoFocus
+                              />
+                              <button
+                                className="btn btn-primary btn-sm"
+                                onClick={() => handleUpdatePassword(u.id)}
+                                disabled={updatingPassword}
+                              >
+                                {updatingPassword ? <span className="spinner" style={{ width: 11, height: 11 }} /> : 'Update'}
+                              </button>
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => { setEditingPassword(null); setNewPassword(''); setPasswordMsg(null); }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                            {passwordMsg?.userId === u.id && (
+                              <div className={`alert ${passwordMsg.ok ? 'alert-success' : 'alert-error'}`} style={{ marginTop: '10px', marginBottom: 0 }}>
+                                {passwordMsg.text}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

@@ -127,4 +127,42 @@ router.delete('/users/:id', async (req, res) => {
   }
 });
 
+// PUT /api/creator/users/:id/password  –  update user password
+router.put('/users/:id/password', async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // Verify user belongs to this creator
+    const { data: target } = await supabase
+      .from('users')
+      .select('id, name')
+      .eq('id', req.params.id)
+      .eq('created_by', req.user.id)
+      .eq('role', 'client_user')
+      .single();
+
+    if (!target) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const password_hash = await bcrypt.hash(password, 12);
+
+    const { error } = await supabase
+      .from('users')
+      .update({ password_hash })
+      .eq('id', req.params.id);
+
+    if (error) throw error;
+
+    res.json({ message: `Password updated for ${target.name}` });
+  } catch (err) {
+    console.error('Update password error:', err);
+    res.status(500).json({ error: 'Failed to update password' });
+  }
+});
+
 module.exports = router;

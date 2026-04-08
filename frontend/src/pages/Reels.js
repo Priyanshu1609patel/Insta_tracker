@@ -86,9 +86,9 @@ export default function Reels() {
 
   return (
     <Layout>
-      <div style={{ padding: '32px', maxWidth: '1200px' }}>
+      <div className="page-pad" style={{ maxWidth: '1200px' }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <div className="page-header">
           <div>
             <h1 style={{ fontSize: '24px', fontWeight: 800 }}>All Reels</h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>
@@ -155,7 +155,7 @@ export default function Reels() {
               <div className="empty-state-desc">Add reels through a client page</div>
             </div>
           ) : (
-            <table className="table">
+            <div className="table-scroll"><table className="table">
               <thead>
                 <tr>
                   <th>#</th>
@@ -224,7 +224,7 @@ export default function Reels() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       </div>

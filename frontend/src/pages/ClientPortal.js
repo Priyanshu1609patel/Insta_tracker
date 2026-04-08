@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import CurrencyDropdown from '../components/CurrencyDropdown';
 import API from '../utils/api';
 import { formatViews, formatCurrency, exactViews, exactCurrency, timeAgo } from '../utils/format';
+import { useCurrency } from '../hooks/useCurrency';
 
 const FORMAT_OPTIONS = [
   { value: 'indian', label: '🇮🇳 Indian',        desc: 'L / Cr'    },
@@ -37,6 +39,7 @@ const AUTO_REFRESH_MS = 3 * 60 * 1000; // silent re-read every 3 min
 export default function ClientPortal() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { currency, changeCurrency, exchangeRate, lastUpdated, loading: currencyLoading } = useCurrency();
   const [data, setData]           = useState(null);
   const [loading, setLoading]     = useState(true);
   const [syncing, setSyncing]     = useState(false);  // full Instagram scrape in progress
@@ -124,35 +127,36 @@ export default function ClientPortal() {
       {/* Top navbar */}
       <header style={{
         background: 'var(--bg-card)', borderBottom: '1px solid var(--border)',
-        padding: '0 28px', height: '58px',
+        padding: '0 16px', height: '58px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        position: 'sticky', top: 0, zIndex: 50,
+        position: 'sticky', top: 0, zIndex: 50, gap: '10px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
           <div style={{
-            width: '32px', height: '32px', borderRadius: '8px',
+            width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
             background: 'var(--gradient)', display: 'flex',
             alignItems: 'center', justifyContent: 'center', fontSize: '15px',
           }}>📸</div>
-          <div>
+          <div style={{ display: 'none' }} className="portal-brand">
             <div style={{ fontWeight: 700, fontSize: '14px' }}>InstaTracker</div>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Client Portal</div>
           </div>
           {client && (
             <span style={{
-              marginLeft: '8px', fontSize: '12px', fontWeight: 600,
+              fontSize: '12px', fontWeight: 600,
               background: 'rgba(225,48,108,0.12)', color: 'var(--primary)',
               border: '1px solid rgba(225,48,108,0.25)',
               borderRadius: '20px', padding: '3px 10px',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px',
             }}>
               {client.name}
             </span>
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           {lastSynced && (
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', display: 'none' }} className="portal-updated">
               Updated {lastSynced.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
@@ -168,17 +172,16 @@ export default function ClientPortal() {
               : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
                   <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                </svg> Sync Now</>
+                </svg> Sync</>
             }
           </button>
           <button
             onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '17px', color: 'var(--text-secondary)' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '17px', color: 'var(--text-secondary)', padding: '4px' }}
             title="Toggle theme"
           >
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Hi, {user?.name}</span>
           <button className="btn btn-secondary btn-sm" onClick={handleLogout}>Logout</button>
         </div>
       </header>
@@ -188,7 +191,7 @@ export default function ClientPortal() {
           <span className="spinner" style={{ width: 40, height: 40 }} />
         </div>
       ) : (
-        <div style={{ padding: '32px 28px', maxWidth: '1100px', margin: '0 auto' }}>
+        <div className="page-pad-sm" style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
           {/* Client info header */}
           <div style={{ marginBottom: '28px' }}>
@@ -211,22 +214,31 @@ export default function ClientPortal() {
                 </div>
               </div>
 
-              {/* Format selector */}
-              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Display:</span>
-                <select
-                  value={fmt}
-                  onChange={e => { setFmt(e.target.value); localStorage.setItem('numFmt', e.target.value); }}
-                  style={{
-                    background: 'var(--bg-card2)', border: '1px solid var(--border)',
-                    borderRadius: '7px', padding: '5px 10px', fontSize: '12px',
-                    color: 'var(--text)', cursor: 'pointer', outline: 'none',
-                  }}
-                >
-                  {FORMAT_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label} ({o.desc})</option>
-                  ))}
-                </select>
+              {/* Format & Currency selectors */}
+              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <CurrencyDropdown 
+                  currency={currency} 
+                  onChange={changeCurrency} 
+                  exchangeRate={exchangeRate}
+                  loading={currencyLoading}
+                  lastUpdated={lastUpdated}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Display:</span>
+                  <select
+                    value={fmt}
+                    onChange={e => { setFmt(e.target.value); localStorage.setItem('numFmt', e.target.value); }}
+                    style={{
+                      background: 'var(--bg-card2)', border: '1px solid var(--border)',
+                      borderRadius: '7px', padding: '5px 10px', fontSize: '12px',
+                      color: 'var(--text)', cursor: 'pointer', outline: 'none',
+                    }}
+                  >
+                    {FORMAT_OPTIONS.map(o => (
+                      <option key={o.value} value={o.value}>{o.label} ({o.desc})</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -239,15 +251,15 @@ export default function ClientPortal() {
           )}
 
           {/* Stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '28px' }}>
+          <div className="grid-3" style={{ marginBottom: '28px' }}>
             <StatCard icon="🎬" label="Total Reels"    color="#833AB4"
               value={reels.length.toString()} />
             <StatCard icon="👁️" label="Total Views"    color="#F77737"
               value={formatViews(totalViews, fmt)}
               sub={fmt !== 'exact' ? exactViews(totalViews) : null} />
             <StatCard icon="💰" label="Total Earnings" color="#22c55e"
-              value={formatCurrency(totalEarnings, fmt)}
-              sub={fmt !== 'exact' ? exactCurrency(totalEarnings) : null} />
+              value={formatCurrency(totalEarnings, fmt, currency, exchangeRate)}
+              sub={fmt !== 'exact' ? exactCurrency(totalEarnings, currency, exchangeRate) : null} />
           </div>
 
           {/* Reels table */}
@@ -318,11 +330,11 @@ export default function ClientPortal() {
                             </td>
                             <td>
                               <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--success)' }}>
-                                {formatCurrency(reel.earnings, fmt)}
+                                {formatCurrency(reel.earnings, fmt, currency, exchangeRate)}
                               </div>
                               {fmt !== 'exact' && (
                                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
-                                  {exactCurrency(reel.earnings)}
+                                  {exactCurrency(reel.earnings, currency, exchangeRate)}
                                 </div>
                               )}
                             </td>
@@ -348,8 +360,8 @@ export default function ClientPortal() {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>Total Earnings</div>
-                    <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--success)' }}>{formatCurrency(totalEarnings, fmt)}</div>
-                    {fmt !== 'exact' && <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{exactCurrency(totalEarnings)}</div>}
+                    <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--success)' }}>{formatCurrency(totalEarnings, fmt, currency, exchangeRate)}</div>
+                    {fmt !== 'exact' && <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{exactCurrency(totalEarnings, currency, exchangeRate)}</div>}
                   </div>
                 </div>
               </>

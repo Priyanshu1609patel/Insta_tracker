@@ -49,10 +49,16 @@ router.get('/', auth, async (req, res) => {
 // POST /api/reels - Add a new reel
 router.post('/', auth, async (req, res) => {
   try {
-    const { client_id, reel_url } = req.body;
+    const { client_id, reel_url, reel_date } = req.body;
 
-    if (!client_id || !reel_url) {
-      return res.status(400).json({ error: 'client_id and reel_url are required' });
+    if (!client_id || !reel_url || !reel_date) {
+      return res.status(400).json({ error: 'client_id, reel_url, and reel_date are required' });
+    }
+
+    // Validate reel_date is not in the future
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (reel_date > todayStr) {
+      return res.status(400).json({ error: 'Date cannot be in the future' });
     }
 
     // Verify client belongs to user
@@ -87,7 +93,7 @@ router.post('/', auth, async (req, res) => {
     // Save reel first
     const { data: reel, error } = await supabase
       .from('reels')
-      .insert([{ client_id, reel_url, views: 0 }])
+      .insert([{ client_id, reel_url, views: 0, reel_date }])
       .select()
       .single();
 
@@ -293,6 +299,43 @@ router.put('/:id/views', auth, async (req, res) => {
   } catch (err) {
     console.error('Manual update error:', err);
     res.status(500).json({ error: 'Failed to update views' });
+  }
+});
+
+// PUT /api/reels/:id/date - Update reel date
+router.put('/:id/date', auth, async (req, res) => {
+  try {
+    const { reel_date } = req.body;
+
+    if (!reel_date) {
+      return res.status(400).json({ error: 'reel_date is required' });
+    }
+
+    // Validate not in the future
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (reel_date > todayStr) {
+      return res.status(400).json({ error: 'Date cannot be in the future' });
+    }
+
+    const { data: reel } = await supabase
+      .from('reels')
+      .select('*, clients!inner(user_id)')
+      .eq('id', req.params.id)
+      .single();
+
+    if (!reel || reel.clients.user_id !== req.user.id) {
+      return res.status(404).json({ error: 'Reel not found' });
+    }
+
+    await supabase
+      .from('reels')
+      .update({ reel_date })
+      .eq('id', req.params.id);
+
+    res.json({ message: 'Date updated successfully', reel_date });
+  } catch (err) {
+    console.error('Update date error:', err);
+    res.status(500).json({ error: 'Failed to update date' });
   }
 });
 
