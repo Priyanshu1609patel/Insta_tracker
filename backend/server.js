@@ -4,6 +4,7 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const supabase = require('./supabase');
 const { startSyncJob } = require('./jobs/syncViews');
+const { loadSessionFromSupabase } = require('./scraper/instaScraper');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -79,6 +80,9 @@ app.listen(PORT, async () => {
 
   // Seed admin user
   await seedAdmin();
+
+  // Load session from Supabase (for Render deployments)
+  await loadSessionFromSupabase();
 
   // Start background sync job
   startSyncJob();

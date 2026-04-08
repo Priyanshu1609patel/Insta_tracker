@@ -1,6 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const supabase = require('../supabase');
 
 // ─────────────────────────────────────────────────────────────
 // Session cookie stored on disk so dashboard can update it
@@ -8,18 +9,70 @@ const path = require('path');
 // ─────────────────────────────────────────────────────────────
 const SESSION_STORE = path.join(__dirname, '../.ig_web_session.json');
 
+// In-memory cache so we don't hit Supabase on every scrape
+let _sessionCache = null;
+
 function getSessionId() {
+  // 1. Local file (local dev)
   try {
     if (fs.existsSync(SESSION_STORE)) {
       const data = JSON.parse(fs.readFileSync(SESSION_STORE, 'utf8'));
       if (data.sessionId) return data.sessionId;
     }
   } catch (_) {}
+  // 2. In-memory cache (set after Supabase fetch)
+  if (_sessionCache) return _sessionCache;
+  // 3. Env variable fallback
   return process.env.INSTAGRAM_SESSION_ID || null;
 }
 
+// Called once on server start — loads sessionId from Supabase into memory
+async function loadSessionFromSupabase() {
+  try {
+    const { data } = await supabase
+      .from('users')
+      .select('ig_session_id')
+      .eq('role', 'admin')
+      .single();
+    if (data?.ig_session_id) {
+      _sessionCache = data.ig_session_id;
+      console.log('[Session] Loaded sessionId from Supabase ✅');
+    }
+  } catch (_) {}
+}
+
+async function getSavedAt() {
+  // 1. Try local file first (works for local dev)
+  try {
+    if (fs.existsSync(SESSION_STORE)) {
+      const data = JSON.parse(fs.readFileSync(SESSION_STORE, 'utf8'));
+      if (data.savedAt) return data.savedAt;
+    }
+  } catch (_) {}
+  // 2. Fall back to Supabase (works on Render after redeploy)
+  try {
+    const { data } = await supabase
+      .from('users')
+      .select('ig_session_saved_at')
+      .eq('role', 'admin')
+      .single();
+    if (data?.ig_session_saved_at) return data.ig_session_saved_at;
+  } catch (_) {}
+  return null;
+}
+
 function setSessionId(sessionId) {
-  fs.writeFileSync(SESSION_STORE, JSON.stringify({ sessionId, savedAt: new Date().toISOString() }));
+  const savedAt = new Date().toISOString();
+  // Save to local file (local dev)
+  try { fs.writeFileSync(SESSION_STORE, JSON.stringify({ sessionId, savedAt })); } catch (_) {}
+  // Save to Supabase (production — survives Render redeploys)
+  _sessionCache = sessionId;
+  supabase
+    .from('users')
+    .update({ ig_session_id: sessionId, ig_session_saved_at: savedAt })
+    .eq('role', 'admin')
+    .then(() => console.log('[Session] Saved to Supabase ✅'))
+    .catch(() => {});
 }
 
 function getStatus() {
@@ -29,7 +82,7 @@ function getStatus() {
     hasSession: !!sessionId,
     sessionPreview: sessionId ? sessionId.substring(0, 8) + '...' : null,
     rapidApiEnabled: !!process.env.RAPIDAPI_KEY,
-    scraperApiEnabled: !!process.env.SCRAPER_API_KEY,
+    cloudflareWorkerEnabled: !!process.env.CLOUDFLARE_WORKER_URL,
   };
 }
 
@@ -37,17 +90,14 @@ async function checkSessionHealth() {
   const sessionId = getSessionId();
   if (!sessionId) return { valid: false, reason: 'No session ID set' };
 
-  // Always calculate days remaining from savedAt — works even if API call fails
+  // Get savedAt from file (local) or Supabase (production)
   let savedAt = null;
   let daysRemaining = null;
   try {
-    if (fs.existsSync(SESSION_STORE)) {
-      const data = JSON.parse(fs.readFileSync(SESSION_STORE, 'utf8'));
-      if (data.savedAt) {
-        savedAt = data.savedAt;
-        const daysPassed = Math.floor((Date.now() - new Date(savedAt).getTime()) / 86400000);
-        daysRemaining = Math.max(0, 90 - daysPassed);
-      }
+    savedAt = await getSavedAt();
+    if (savedAt) {
+      const daysPassed = Math.floor((Date.now() - new Date(savedAt).getTime()) / 86400000);
+      daysRemaining = Math.max(0, 90 - daysPassed);
     }
   } catch (_) {}
 
@@ -94,7 +144,7 @@ async function checkSessionHealth() {
 // ─────────────────────────────────────────────────────────────
 // Method 1 — Instagram Web Session Cookie (FREE, no rate limit)
 // ─────────────────────────────────────────────────────────────
-// Build axios config — routes through ScraperAPI if key is set
+// Build axios config — routes through Cloudflare Worker if direct request is blocked
 async function fetchWithFallback(targetUrl, headers) {
   // Always try direct first (cookie works, no proxy stripping)
   try {
@@ -102,16 +152,24 @@ async function fetchWithFallback(targetUrl, headers) {
     return res;
   } catch (directErr) {
     const status = directErr.response?.status;
-    // Only fall back to ScraperAPI on IP-based blocks (429 or no response)
-    const scraperKey = process.env.SCRAPER_API_KEY;
-    if (scraperKey && (status === 429 || !status)) {
-      console.log(`[ScraperAPI] Direct blocked (${status}) — retrying via residential IP`);
-      const res = await axios.get('http://api.scraperapi.com', {
-        params: { api_key: scraperKey, url: targetUrl },
-        headers,
-        timeout: 25000,
-      });
-      return res;
+    // Fall back to Cloudflare Worker on IP-based blocks (429, 400, or no response)
+    const workerUrl = process.env.CLOUDFLARE_WORKER_URL;
+    const workerToken = process.env.CLOUDFLARE_WORKER_TOKEN;
+    if (workerUrl && (status === 429 || status === 400 || !status)) {
+      console.log(`[CloudflareWorker] Direct blocked (${status}) — retrying via Cloudflare edge`);
+      const workerRes = await axios.post(
+        workerUrl,
+        { url: targetUrl, headers },
+        {
+          headers: {
+            'X-Worker-Token': workerToken || '',
+            'Content-Type': 'application/json',
+          },
+          timeout: 25000,
+        }
+      );
+      // axios auto-parses JSON; for HTML responses it stays as string — both work fine
+      return workerRes;
     }
     throw directErr;
   }
@@ -315,6 +373,7 @@ module.exports = {
   getStatus,
   setSessionId,
   checkSessionHealth,
+  loadSessionFromSupabase,
   // kept for route compatibility (no-ops now)
   resolveChallenge: async () => ({ success: false, error: 'Not applicable' }),
   resendCode: async () => ({ success: false, error: 'Not applicable' }),

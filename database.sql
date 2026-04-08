@@ -180,5 +180,11 @@ ALTER TABLE users ALTER COLUMN role SET DEFAULT 'creator';
 UPDATE users SET role = 'creator' WHERE email != 'admin@gmail.com';
 
 -- ============================================================
+-- MIGRATION: Instagram session tracking
+-- ============================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS ig_session_saved_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS ig_session_id TEXT;
+
+-- ============================================================
 -- DONE! Your database is ready.
 -- ============================================================
