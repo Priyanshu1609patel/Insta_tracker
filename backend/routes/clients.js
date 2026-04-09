@@ -50,7 +50,7 @@ router.get('/:id', auth, async (req, res) => {
 // POST /api/clients - Create client
 router.post('/', auth, async (req, res) => {
   try {
-    const { name, rate_per_view, description } = req.body;
+    const { name, rate_per_view, description, rate_tiers } = req.body;
 
     if (!name || !rate_per_view) {
       return res.status(400).json({ error: 'Name and rate_per_view are required' });
@@ -62,7 +62,13 @@ router.post('/', auth, async (req, res) => {
 
     const { data, error } = await supabase
       .from('clients')
-      .insert([{ name, rate_per_view: parseFloat(rate_per_view), description, user_id: req.user.id }])
+      .insert([{
+        name,
+        rate_per_view: parseFloat(rate_per_view),
+        description,
+        rate_tiers: Array.isArray(rate_tiers) ? rate_tiers : [],
+        user_id: req.user.id,
+      }])
       .select()
       .single();
 
@@ -77,12 +83,13 @@ router.post('/', auth, async (req, res) => {
 // PUT /api/clients/:id - Update client
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { name, rate_per_view, description } = req.body;
+    const { name, rate_per_view, description, rate_tiers } = req.body;
 
     const updates = {};
     if (name) updates.name = name;
     if (rate_per_view !== undefined) updates.rate_per_view = parseFloat(rate_per_view);
     if (description !== undefined) updates.description = description;
+    if (rate_tiers !== undefined) updates.rate_tiers = Array.isArray(rate_tiers) ? rate_tiers : [];
 
     const { data, error } = await supabase
       .from('clients')

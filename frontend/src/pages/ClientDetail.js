@@ -617,7 +617,17 @@ export default function ClientDetail() {
           <div style={{ flex: 1, minWidth: '160px' }}>
             <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)' }}>{client?.name}</h1>
             <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '3px' }}>
-              Rate: <strong style={{ color: 'var(--primary)' }}>₹{client?.rate_per_view} per view</strong>
+              Rate: <strong style={{ color: 'var(--primary)' }}>
+                {client?.rate_tiers?.length > 0
+                  ? client.rate_tiers.map(t => {
+                      const n = t.display_per_units || 1;
+                      const r = t.display_rate !== undefined ? t.display_rate : (t.rate_inr_per_view * n);
+                      const label = n >= 1000000 ? `${n/1000000}M` : n >= 1000 ? `${n/1000}K` : n;
+                      return `₹${parseFloat(r).toFixed(0)}/${label}`;
+                    }).join(' · ')
+                  : `₹${client?.rate_per_view} per view`
+                }
+              </strong>
               {client?.description && (
                 <span style={{ marginLeft: '14px', color: 'var(--text-secondary)' }}>{client.description}</span>
               )}

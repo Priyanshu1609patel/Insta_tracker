@@ -186,5 +186,70 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS ig_session_saved_at TIMESTAMP WITH TI
 ALTER TABLE users ADD COLUMN IF NOT EXISTS ig_session_id TEXT;
 
 -- ============================================================
+-- MIGRATION: Tiered rate pricing (Option A — highest matching tier wins)
+-- ============================================================
+
+-- Add rate_tiers column to clients
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS rate_tiers JSONB DEFAULT '[]'::jsonb;
+
+-- Function: returns earnings using highest matched tier, falls back to base rate_per_view
+CREATE OR REPLACE FUNCTION calculate_earnings(p_views BIGINT, p_base_rate DECIMAL, p_tiers JSONB)
+RETURNS DECIMAL AS $$
+DECLARE
+  v_tier           JSONB;
+  v_tier_min       BIGINT;
+  v_best_rate      DECIMAL := p_base_rate;
+  v_best_min       BIGINT  := -1;
+BEGIN
+  IF p_tiers IS NOT NULL AND jsonb_array_length(p_tiers) > 0 THEN
+    FOR v_tier IN SELECT * FROM jsonb_array_elements(p_tiers)
+    LOOP
+      v_tier_min := (v_tier->>'min_views')::BIGINT;
+      IF p_views >= v_tier_min AND v_tier_min > v_best_min THEN
+        v_best_min  := v_tier_min;
+        v_best_rate := (v_tier->>'rate_inr_per_view')::DECIMAL;
+      END IF;
+    END LOOP;
+  END IF;
+  RETURN p_views * v_best_rate;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- Rebuild reel_earnings view to use tiered calculation
+CREATE OR REPLACE VIEW reel_earnings AS
+SELECT
+  r.id,
+  r.client_id,
+  c.name          AS client_name,
+  c.rate_per_view,
+  c.rate_tiers,
+  r.reel_url,
+  r.views,
+  r.title,
+  r.status,
+  r.created_at,
+  r.last_updated,
+  calculate_earnings(r.views, c.rate_per_view, c.rate_tiers) AS earnings
+FROM reels r
+JOIN clients c ON c.id = r.client_id;
+
+-- Rebuild client_summary view to use tiered calculation
+CREATE OR REPLACE VIEW client_summary AS
+SELECT
+  c.id,
+  c.user_id,
+  c.name,
+  c.rate_per_view,
+  c.rate_tiers,
+  c.description,
+  c.created_at,
+  COUNT(r.id)                                                                        AS total_reels,
+  COALESCE(SUM(r.views), 0)                                                          AS total_views,
+  COALESCE(SUM(calculate_earnings(r.views, c.rate_per_view, c.rate_tiers)), 0)       AS total_earnings
+FROM clients c
+LEFT JOIN reels r ON r.client_id = c.id
+GROUP BY c.id, c.user_id, c.name, c.rate_per_view, c.rate_tiers, c.description, c.created_at;
+
+-- ============================================================
 -- DONE! Your database is ready.
 -- ============================================================
