@@ -233,7 +233,8 @@ export default function Reels() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table></div>
           )}
