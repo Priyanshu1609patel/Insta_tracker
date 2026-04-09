@@ -187,9 +187,22 @@ function ReelRow({ reel, fmt, currency, exchangeRate, syncingId, onSync, onDelet
   const shortUrl = reel.reel_url.replace('https://www.', '').replace('https://', '').split('?')[0];
   const isPending  = reel._pending;   // just added, awaiting server
   const isSyncing  = reel._syncing;   // server saved, awaiting view scrape
+  const platform = reel.platform || (reel.reel_url?.includes('tiktok.com') ? 'tiktok' : 'instagram');
 
   return (
     <tr style={{ opacity: isPending ? 0.7 : 1 }}>
+      {/* Platform */}
+      <td>
+        {platform === 'tiktok' ? (
+          <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '5px', background: 'rgba(0,0,0,0.3)', color: '#69C9D0', whiteSpace: 'nowrap' }}>
+            TikTok
+          </span>
+        ) : (
+          <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '5px', background: 'rgba(131,58,180,0.15)', color: '#c084fc', whiteSpace: 'nowrap' }}>
+            Instagram
+          </span>
+        )}
+      </td>
       {/* URL */}
       <td style={{ maxWidth: '260px' }}>
         <a
@@ -320,7 +333,7 @@ function ReelRow({ reel, fmt, currency, exchangeRate, syncingId, onSync, onDelet
             className="btn btn-secondary btn-sm"
             onClick={() => onSync(reel.id)}
             disabled={syncingId === reel.id}
-            title="Sync from Instagram"
+            title={`Sync from ${platform === 'tiktok' ? 'TikTok' : 'Instagram'}`}
             style={{ padding: '5px 9px' }}
           >
             {syncingId === reel.id
@@ -459,7 +472,7 @@ export default function ClientDetail() {
         setSyncingAll(false);
         return;
       }
-      setSyncAllMsg({ text: `Syncing ${count} reel${count > 1 ? 's' : ''} from Instagram…`, ok: true });
+      setSyncAllMsg({ text: `Syncing ${count} reel${count > 1 ? 's' : ''}…`, ok: true });
 
       const syncStartTime = Date.now();
 
@@ -673,7 +686,7 @@ export default function ClientDetail() {
                 className="btn btn-secondary btn-sm"
                 onClick={handleSyncAll}
                 disabled={syncingAll || reels.length === 0}
-                title="Fetch latest views from Instagram for all reels at once"
+                title="Fetch latest views for all reels at once"
                 style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
               >
                 {syncingAll
@@ -713,12 +726,12 @@ export default function ClientDetail() {
               background: 'var(--bg-card2)', borderRadius: '10px',
               padding: '16px', marginBottom: '18px', border: '1px solid var(--border)',
             }}>
-              <div style={{ fontWeight: 600, marginBottom: '10px', fontSize: '14px' }}>Add Instagram Reel</div>
+              <div style={{ fontWeight: 600, marginBottom: '10px', fontSize: '14px' }}>Add Instagram / TikTok Reel</div>
               {addError && <div className="alert alert-error">{addError}</div>}
               <form onSubmit={handleAddReel}>
                 <input
                   className="input"
-                  placeholder="https://www.instagram.com/reel/..."
+                  placeholder="https://www.instagram.com/reel/... or https://www.tiktok.com/@user/video/..."
                   value={reelUrl}
                   onChange={e => setReelUrl(e.target.value)}
                   required
@@ -751,7 +764,7 @@ export default function ClientDetail() {
             <div className="empty-state">
               <div className="empty-state-icon">🎬</div>
               <div className="empty-state-title">No reels yet</div>
-              <div className="empty-state-desc">Paste an Instagram reel URL to start tracking views</div>
+              <div className="empty-state-desc">Paste an Instagram or TikTok reel URL to start tracking views</div>
               <button className="btn btn-primary" onClick={() => setShowAddReel(true)}>+ Add First Reel</button>
             </div>
           ) : (
@@ -759,6 +772,7 @@ export default function ClientDetail() {
               <table className="table" style={{ minWidth: '640px' }}>
                 <thead>
                   <tr>
+                    <th>Platform</th>
                     <th>Reel URL</th>
                     <th>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>

@@ -251,5 +251,13 @@ LEFT JOIN reels r ON r.client_id = c.id
 GROUP BY c.id, c.user_id, c.name, c.rate_per_view, c.rate_tiers, c.description, c.created_at;
 
 -- ============================================================
+-- MIGRATION: TikTok support — add platform column to reels
+-- ============================================================
+ALTER TABLE reels ADD COLUMN IF NOT EXISTS platform VARCHAR(20) DEFAULT 'instagram';
+-- Backfill existing rows
+UPDATE reels SET platform = 'tiktok'  WHERE reel_url ILIKE '%tiktok.com%' AND platform = 'instagram';
+UPDATE reels SET platform = 'instagram' WHERE platform IS NULL;
+
+-- ============================================================
 -- DONE! Your database is ready.
 -- ============================================================

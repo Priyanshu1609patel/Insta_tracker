@@ -159,6 +159,7 @@ export default function Reels() {
               <thead>
                 <tr>
                   <th>#</th>
+                  <th>Platform</th>
                   <th>Client</th>
                   <th>Reel URL</th>
                   <th>Views</th>
@@ -169,9 +170,19 @@ export default function Reels() {
                 </tr>
               </thead>
               <tbody>
-                {reels.map((reel, idx) => (
+                {reels.map((reel, idx) => {
+                  const platform = reel.platform || (reel.reel_url?.includes('tiktok.com') ? 'tiktok' : 'instagram');
+                  const shortUrl = reel.reel_url.replace('https://www.', '').replace('https://', '').split('?')[0];
+                  return (
                   <tr key={reel.id}>
                     <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{idx + 1}</td>
+                    <td>
+                      {platform === 'tiktok' ? (
+                        <span className="badge" style={{ background: 'rgba(0,0,0,0.3)', color: '#69C9D0' }}>TikTok</span>
+                      ) : (
+                        <span className="badge" style={{ background: 'rgba(131,58,180,0.15)', color: '#c084fc' }}>Instagram</span>
+                      )}
+                    </td>
                     <td>
                       <span className="badge" style={{ background: 'rgba(131,58,180,0.15)', color: '#c084fc' }}>
                         {reel.client_name}
@@ -185,7 +196,7 @@ export default function Reels() {
                         style={{ color: 'var(--primary)', fontSize: '13px' }}
                         title={reel.reel_url}
                       >
-                        {reel.reel_url.replace('https://www.instagram.com/', '').substring(0, 35)}...
+                        {shortUrl.substring(0, 35)}...
                       </a>
                     </td>
                     <td>

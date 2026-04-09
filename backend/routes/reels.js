@@ -3,6 +3,16 @@ const router = express.Router();
 const supabase = require('../supabase');
 const auth = require('../middleware/auth');
 const { scrapeReelViews } = require('../scraper/instaScraper');
+const { scrapeTikTokViews } = require('../scraper/tiktokScraper');
+
+function detectPlatform(url) {
+  if (/tiktok\.com/i.test(url)) return 'tiktok';
+  return 'instagram';
+}
+
+function scrapeViews(url) {
+  return detectPlatform(url) === 'tiktok' ? scrapeTikTokViews(url) : scrapeReelViews(url);
+}
 
 // GET /api/reels - Get all reels (optionally filter by client)
 router.get('/', auth, async (req, res) => {
@@ -73,9 +83,10 @@ router.post('/', auth, async (req, res) => {
       return res.status(404).json({ error: 'Client not found' });
     }
 
-    // Validate Instagram URL
-    if (!reel_url.includes('instagram.com')) {
-      return res.status(400).json({ error: 'Please provide a valid Instagram URL' });
+    // Validate Instagram or TikTok URL
+    const platform = detectPlatform(reel_url);
+    if (!reel_url.includes('instagram.com') && !reel_url.includes('tiktok.com')) {
+      return res.status(400).json({ error: 'Please provide a valid Instagram or TikTok URL' });
     }
 
     // Check duplicate
@@ -93,7 +104,7 @@ router.post('/', auth, async (req, res) => {
     // Save reel first
     const { data: reel, error } = await supabase
       .from('reels')
-      .insert([{ client_id, reel_url, views: 0, reel_date }])
+      .insert([{ client_id, reel_url, views: 0, reel_date, platform }])
       .select()
       .single();
 
@@ -103,7 +114,7 @@ router.post('/', auth, async (req, res) => {
     res.status(201).json({ reel, message: 'Reel added. Views will be fetched shortly.' });
 
     // Scrape async after response
-    scrapeReelViews(reel_url).then(async (views) => {
+    scrapeViews(reel_url).then(async (views) => {
       if (views !== null) {
         await supabase
           .from('reels')
@@ -163,7 +174,7 @@ router.post('/sync-client', auth, async (req, res) => {
         break;
       }
       try {
-        const views = await scrapeReelViews(reel.reel_url);
+        const views = await scrapeViews(reel.reel_url);
         if (views !== null) {
           consecutiveFails = 0;
           await supabase.from('reels')
@@ -208,7 +219,7 @@ router.post('/:id/sync', auth, async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    const views = await scrapeReelViews(reel.reel_url);
+    const views = await scrapeViews(reel.reel_url);
 
     if (views === null) {
       await supabase.from('sync_logs').insert([{
@@ -216,7 +227,8 @@ router.post('/:id/sync', auth, async (req, res) => {
         status: 'failed',
         message: 'Failed to scrape views'
       }]);
-      return res.status(500).json({ error: 'Failed to fetch views from Instagram' });
+      const platformLabel = detectPlatform(reel.reel_url) === 'tiktok' ? 'TikTok' : 'Instagram';
+      return res.status(500).json({ error: `Failed to fetch views from ${platformLabel}` });
     }
 
     const viewsBefore = reel.views;
