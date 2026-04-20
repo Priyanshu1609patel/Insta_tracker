@@ -178,9 +178,9 @@ export default function Reels() {
                     <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{idx + 1}</td>
                     <td>
                       {platform === 'tiktok' ? (
-                        <span className="badge" style={{ background: 'rgba(0,0,0,0.3)', color: '#69C9D0' }}>TikTok</span>
+                        <span className="badge" style={{ background: 'rgba(0,194,203,0.12)', color: '#008b94', border: '1px solid rgba(0,194,203,0.35)' }}>TikTok</span>
                       ) : (
-                        <span className="badge" style={{ background: 'rgba(131,58,180,0.15)', color: '#c084fc' }}>Instagram</span>
+                        <span className="badge" style={{ background: 'rgba(131,58,180,0.12)', color: '#7c3aed', border: '1px solid rgba(131,58,180,0.35)' }}>Instagram</span>
                       )}
                     </td>
                     <td>

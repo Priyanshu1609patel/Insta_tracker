@@ -194,11 +194,11 @@ function ReelRow({ reel, fmt, currency, exchangeRate, syncingId, onSync, onDelet
       {/* Platform */}
       <td>
         {platform === 'tiktok' ? (
-          <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '5px', background: 'rgba(0,0,0,0.3)', color: '#69C9D0', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '5px', background: 'rgba(0,194,203,0.12)', color: '#008b94', border: '1px solid rgba(0,194,203,0.35)', whiteSpace: 'nowrap' }}>
             TikTok
           </span>
         ) : (
-          <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '5px', background: 'rgba(131,58,180,0.15)', color: '#c084fc', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '5px', background: 'rgba(131,58,180,0.12)', color: '#7c3aed', border: '1px solid rgba(131,58,180,0.35)', whiteSpace: 'nowrap' }}>
             Instagram
           </span>
         )}

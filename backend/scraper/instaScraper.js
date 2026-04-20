@@ -155,21 +155,28 @@ async function fetchWithFallback(targetUrl, headers) {
     // Fall back to Cloudflare Worker on IP-based blocks (429, 400, or no response)
     const workerUrl = process.env.CLOUDFLARE_WORKER_URL;
     const workerToken = process.env.CLOUDFLARE_WORKER_TOKEN;
-    if (workerUrl && (status === 429 || status === 400 || !status)) {
+    if (workerUrl && (status === 429 || status === 400 || status === 403 || !status)) {
       console.log(`[CloudflareWorker] Direct blocked (${status}) — retrying via Cloudflare edge`);
-      const workerRes = await axios.post(
-        workerUrl,
-        { url: targetUrl, headers },
-        {
-          headers: {
-            'X-Worker-Token': workerToken || '',
-            'Content-Type': 'application/json',
-          },
-          timeout: 25000,
-        }
-      );
-      // axios auto-parses JSON; for HTML responses it stays as string — both work fine
-      return workerRes;
+      try {
+        const workerRes = await axios.post(
+          workerUrl.trim(),
+          { url: targetUrl, headers },
+          {
+            headers: {
+              'X-Worker-Token': workerToken || '',
+              'Content-Type': 'application/json',
+            },
+            timeout: 25000,
+          }
+        );
+        console.log(`[CloudflareWorker] Response status: ${workerRes.status}`);
+        return workerRes;
+      } catch (workerErr) {
+        const workerStatus = workerErr.response?.status;
+        const workerBody = workerErr.response?.data;
+        console.log(`[CloudflareWorker] Failed — status=${workerStatus} body=${JSON.stringify(workerBody)}`);
+        throw workerErr;
+      }
     }
     throw directErr;
   }

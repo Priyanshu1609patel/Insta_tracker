@@ -216,7 +216,8 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- Rebuild reel_earnings view to use tiered calculation
-CREATE OR REPLACE VIEW reel_earnings AS
+DROP VIEW IF EXISTS reel_earnings;
+CREATE VIEW reel_earnings AS
 SELECT
   r.id,
   r.client_id,
@@ -227,6 +228,8 @@ SELECT
   r.views,
   r.title,
   r.status,
+  r.platform,
+  r.reel_date,
   r.created_at,
   r.last_updated,
   calculate_earnings(r.views, c.rate_per_view, c.rate_tiers) AS earnings
