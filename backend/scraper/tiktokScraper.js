@@ -104,6 +104,13 @@ async function scrapeTikTokViews(videoUrl) {
       }
     }
 
+    // Debug: check what script tags and playCount references exist
+    const hasUniversal = html.includes('__UNIVERSAL_DATA_FOR_REHYDRATION__');
+    const hasSigi = html.includes('SIGI_STATE');
+    const playCountIdx = html.indexOf('playCount');
+    const playCountSnippet = playCountIdx !== -1 ? html.slice(playCountIdx, playCountIdx + 60) : 'NOT FOUND';
+    console.log(`[TikTok] Debug — hasUniversal=${hasUniversal} hasSigi=${hasSigi} playCountSnippet=${playCountSnippet}`);
+
     console.log('[TikTok] ❌ No view count found in HTML');
     return null;
   } catch (err) {
