@@ -104,19 +104,19 @@ async function scrapeTikTokViews(videoUrl) {
       }
     }
 
-    // Debug: inspect what's inside the UNIVERSAL_DATA stats object
+    // Debug: inspect UNIVERSAL_DATA structure
     const scriptMatch2 = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
     if (scriptMatch2) {
       try {
         const json = JSON.parse(scriptMatch2[1]);
         const scope = json['__DEFAULT_SCOPE__'] || {};
+        console.log(`[TikTok] Debug — scope keys=${Object.keys(scope).join(',')}`);
         const videoDetail = scope['webapp.video-detail'];
-        const itemStruct = videoDetail?.itemInfo?.itemStruct;
-        console.log(`[TikTok] Debug — stats=${JSON.stringify(itemStruct?.stats)} statsV2=${JSON.stringify(itemStruct?.statsV2)}`);
-        if (itemStruct) {
-          const keys = Object.keys(itemStruct);
-          console.log(`[TikTok] Debug — itemStruct keys=${keys.join(',')}`);
-        }
+        console.log(`[TikTok] Debug — videoDetail keys=${videoDetail ? Object.keys(videoDetail).join(',') : 'undefined'}`);
+        const itemInfo = videoDetail?.itemInfo;
+        console.log(`[TikTok] Debug — itemInfo keys=${itemInfo ? Object.keys(itemInfo).join(',') : 'undefined'}`);
+        const itemStruct = itemInfo?.itemStruct;
+        console.log(`[TikTok] Debug — itemStruct=${itemStruct ? JSON.stringify(itemStruct).slice(0, 300) : 'undefined'}`);
       } catch (e) {
         console.log(`[TikTok] Debug — parse error: ${e.message}`);
       }
