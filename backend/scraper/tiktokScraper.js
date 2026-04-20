@@ -52,16 +52,18 @@ async function scrapeTikTokViews(videoUrl) {
     const html = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
     console.log(`[TikTok] HTML length=${html.length}`);
 
-    // Method A: __UNIVERSAL_DATA_FOR_REHYDRATION__ JSON blob (most reliable)
+    // Method A: __UNIVERSAL_DATA_FOR_REHYDRATION__ JSON blob
     const scriptMatch = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
     if (scriptMatch) {
       try {
         const json = JSON.parse(scriptMatch[1]);
         const scope = json['__DEFAULT_SCOPE__'] || {};
         const videoDetail = scope['webapp.video-detail'];
-        const stats = videoDetail?.itemInfo?.itemStruct?.stats;
-        if (stats?.playCount !== undefined) {
-          const views = parseInt(stats.playCount);
+        const itemStruct = videoDetail?.itemInfo?.itemStruct;
+        // statsV2 uses string values (newer TikTok), stats uses numbers (older)
+        const playCount = itemStruct?.statsV2?.playCount ?? itemStruct?.stats?.playCount;
+        if (playCount !== undefined) {
+          const views = parseInt(playCount);
           console.log(`[TikTok] ✅ UNIVERSAL_DATA → ${views} views`);
           return views;
         }
@@ -75,18 +77,22 @@ async function scrapeTikTokViews(videoUrl) {
         const json = JSON.parse(sigiMatch[1]);
         const itemModule = json?.ItemModule || {};
         const firstItem = Object.values(itemModule)[0];
-        if (firstItem?.stats?.playCount !== undefined) {
-          const views = parseInt(firstItem.stats.playCount);
+        const playCount = firstItem?.statsV2?.playCount ?? firstItem?.stats?.playCount;
+        if (playCount !== undefined) {
+          const views = parseInt(playCount);
           console.log(`[TikTok] ✅ SIGI_STATE → ${views} views`);
           return views;
         }
       } catch (_) {}
     }
 
-    // Method C: regex fallback on raw HTML
+    // Method C: regex fallback — handles both string and number values
     const patterns = [
-      /"playCount"\s*:\s*(\d+)/,
+      /"playCount"\s*:\s*"(\d+)"/,   // string value (new TikTok)
+      /"playCount"\s*:\s*(\d+)/,      // number value (old TikTok)
+      /"play_count"\s*:\s*"(\d+)"/,
       /"play_count"\s*:\s*(\d+)/,
+      /"videoPlayCount"\s*:\s*"(\d+)"/,
       /"videoPlayCount"\s*:\s*(\d+)/,
     ];
     for (const pattern of patterns) {
