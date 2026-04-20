@@ -104,12 +104,23 @@ async function scrapeTikTokViews(videoUrl) {
       }
     }
 
-    // Debug: check what script tags and playCount references exist
-    const hasUniversal = html.includes('__UNIVERSAL_DATA_FOR_REHYDRATION__');
-    const hasSigi = html.includes('SIGI_STATE');
-    const playCountIdx = html.indexOf('playCount');
-    const playCountSnippet = playCountIdx !== -1 ? html.slice(playCountIdx, playCountIdx + 60) : 'NOT FOUND';
-    console.log(`[TikTok] Debug — hasUniversal=${hasUniversal} hasSigi=${hasSigi} playCountSnippet=${playCountSnippet}`);
+    // Debug: inspect what's inside the UNIVERSAL_DATA stats object
+    const scriptMatch2 = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
+    if (scriptMatch2) {
+      try {
+        const json = JSON.parse(scriptMatch2[1]);
+        const scope = json['__DEFAULT_SCOPE__'] || {};
+        const videoDetail = scope['webapp.video-detail'];
+        const itemStruct = videoDetail?.itemInfo?.itemStruct;
+        console.log(`[TikTok] Debug — stats=${JSON.stringify(itemStruct?.stats)} statsV2=${JSON.stringify(itemStruct?.statsV2)}`);
+        if (itemStruct) {
+          const keys = Object.keys(itemStruct);
+          console.log(`[TikTok] Debug — itemStruct keys=${keys.join(',')}`);
+        }
+      } catch (e) {
+        console.log(`[TikTok] Debug — parse error: ${e.message}`);
+      }
+    }
 
     console.log('[TikTok] ❌ No view count found in HTML');
     return null;
