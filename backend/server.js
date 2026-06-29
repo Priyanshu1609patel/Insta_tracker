@@ -25,6 +25,7 @@ async function seedAdmin() {
         email: 'admin@gmail.com',
         password_hash: hash,
         role: 'admin',
+        status: 'approved',
       }]);
       console.log('✅ Admin user created: admin@gmail.com');
     } else if (existing.role !== 'admin') {

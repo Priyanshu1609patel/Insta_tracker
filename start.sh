@@ -1,7 +1,7 @@
 #!/bin/bash
-# Quick start script for InstaTracker
+# Quick start script for Amplify
 
-echo "🚀 Starting InstaTracker..."
+echo "🚀 Starting Amplify..."
 echo ""
 
 # Start backend
@@ -18,7 +18,7 @@ cd ../frontend && npm install --silent && npm start &
 FRONTEND_PID=$!
 
 echo ""
-echo "✅ InstaTracker is running!"
+echo "✅ Amplify is running!"
 echo "   Frontend: http://localhost:3000"
 echo "   Backend:  http://localhost:5000"
 echo ""

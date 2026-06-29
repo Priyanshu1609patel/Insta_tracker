@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const supabase = require('../supabase');
+// const { sendRegistrationAlert } = require('../utils/mailer'); // approval flow — disabled for now
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
@@ -32,9 +33,10 @@ router.post('/register', async (req, res) => {
     const password_hash = await bcrypt.hash(password, 12);
 
     // Create user (always role 'creator'; admin is seeded separately)
+    // status = 'approved' directly — approval flow disabled for now
     const { data: user, error } = await supabase
       .from('users')
-      .insert([{ name, email: email.toLowerCase(), password_hash, role: 'creator' }])
+      .insert([{ name, email: email.toLowerCase(), password_hash, role: 'creator', status: 'approved' }])
       .select('id, name, email, role, created_at')
       .single();
 
@@ -48,6 +50,10 @@ router.post('/register', async (req, res) => {
     );
 
     res.status(201).json({ token, user });
+
+    // -- Approval flow (commented out for now) --
+    // sendRegistrationAlert({ name: user.name, email: user.email, registeredAt: user.created_at });
+    // res.status(201).json({ success: true, pending: true, message: 'Registration submitted! Awaiting admin approval.' });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Registration failed' });
@@ -79,6 +85,16 @@ router.post('/login', async (req, res) => {
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+
+    // -- Status check (commented out for now — approval flow disabled) --
+    // if (user.role !== 'admin') {
+    //   if (user.status === 'pending') {
+    //     return res.status(403).json({ error: 'Your account is pending admin approval.' });
+    //   }
+    //   if (user.status === 'rejected') {
+    //     return res.status(403).json({ error: 'Your account registration was not approved.' });
+    //   }
+    // }
 
     // Generate token (include client_id for client_user role)
     const token = jwt.sign(

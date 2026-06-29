@@ -80,7 +80,7 @@ export default function Register() {
             fontSize: '32px', margin: '0 auto 16px'
           }}>📸</div>
           <h1 style={{ fontSize: '28px', fontWeight: 800 }}>
-            <span className="gradient-text">InstaTracker</span>
+            <span className="gradient-text">Amplify</span>
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>
             Create your agency account
@@ -169,6 +169,10 @@ export default function Register() {
             </Link>
           </p>
         </div>
+
+        <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: 'var(--text-muted)' }}>
+          <Link to="/" style={{ color: 'var(--text-muted)' }}>← Back to home</Link>
+        </p>
       </div>
     </div>
   );

@@ -200,7 +200,10 @@ export default function AdminPanel() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
+  const [pendingUsers, setPendingUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [loadingPending, setLoadingPending] = useState(true);
+  const [actionMsg, setActionMsg] = useState('');
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
   const [sidebarOpen, setSidebarOpen] = useState(() => typeof window === 'undefined' || window.innerWidth >= 768);
@@ -220,12 +223,50 @@ export default function AdminPanel() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
+  const loadUsers = () => {
     API.get('/admin/users')
       .then(r => setUsers(r.data.users || []))
       .catch(() => {})
       .finally(() => setLoadingUsers(false));
+  };
+
+  const loadPending = () => {
+    API.get('/admin/pending-users')
+      .then(r => setPendingUsers(r.data.users || []))
+      .catch(() => {})
+      .finally(() => setLoadingPending(false));
+  };
+
+  useEffect(() => {
+    loadUsers();
+    loadPending();
   }, []);
+
+  const handleApprove = async (id, name) => {
+    try {
+      await API.post(`/admin/users/${id}/approve`);
+      setActionMsg(`✅ ${name} has been approved`);
+      loadPending();
+      loadUsers();
+      setTimeout(() => setActionMsg(''), 4000);
+    } catch (err) {
+      setActionMsg('❌ Failed to approve user');
+      setTimeout(() => setActionMsg(''), 4000);
+    }
+  };
+
+  const handleReject = async (id, name) => {
+    if (!window.confirm(`Reject ${name}'s registration?`)) return;
+    try {
+      await API.post(`/admin/users/${id}/reject`);
+      setActionMsg(`${name} has been rejected`);
+      loadPending();
+      setTimeout(() => setActionMsg(''), 4000);
+    } catch (err) {
+      setActionMsg('❌ Failed to reject user');
+      setTimeout(() => setActionMsg(''), 4000);
+    }
+  };
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -262,7 +303,7 @@ export default function AdminPanel() {
               alignItems: 'center', justifyContent: 'center', fontSize: '17px',
             }}>📸</div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: '14px' }}>InstaTracker</div>
+              <div style={{ fontWeight: 700, fontSize: '14px' }}>Amplify</div>
               <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Admin Panel</div>
             </div>
           </div>
@@ -339,6 +380,97 @@ export default function AdminPanel() {
               Manage Instagram scraper session and monitor creator accounts
             </p>
           </div>
+
+          {/* Action message */}
+          {actionMsg && (
+            <div className={`alert ${actionMsg.startsWith('❌') ? 'alert-error' : 'alert-success'}`} style={{ marginBottom: '20px' }}>
+              {actionMsg}
+            </div>
+          )}
+
+          {/* Pending Approvals */}
+          {(loadingPending || pendingUsers.length > 0) && (
+            <div className="card" style={{ marginBottom: '24px', border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+                <h2 style={{ fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span>⏳</span> Pending Approvals
+                  {pendingUsers.length > 0 && (
+                    <span style={{
+                      fontSize: '12px', fontWeight: 700,
+                      background: 'rgba(245,158,11,0.2)', color: '#fcd34d',
+                      border: '1px solid rgba(245,158,11,0.4)',
+                      borderRadius: '20px', padding: '2px 9px',
+                    }}>
+                      {pendingUsers.length} pending
+                    </span>
+                  )}
+                </h2>
+              </div>
+
+              {loadingPending ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '30px' }}>
+                  <span className="spinner" style={{ width: 28, height: 28 }} />
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Requested</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingUsers.map((u, i) => (
+                        <tr key={u.id}>
+                          <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{i + 1}</td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{
+                                width: '32px', height: '32px', borderRadius: '8px',
+                                background: 'rgba(245,158,11,0.2)', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center',
+                                color: '#fcd34d', fontWeight: 700, fontSize: '13px', flexShrink: 0,
+                              }}>
+                                {u.name?.charAt(0).toUpperCase()}
+                              </div>
+                              <span style={{ fontWeight: 600, fontSize: '14px' }}>{u.name}</span>
+                            </div>
+                          </td>
+                          <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{u.email}</td>
+                          <td style={{ color: 'var(--text-muted)', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                            {new Date(u.created_at).toLocaleDateString('en-IN', {
+                              day: '2-digit', month: 'short', year: 'numeric'
+                            })}
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button
+                                className="btn btn-sm"
+                                onClick={() => handleApprove(u.id, u.name)}
+                                style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}
+                              >
+                                ✓ Approve
+                              </button>
+                              <button
+                                className="btn btn-sm btn-danger"
+                                onClick={() => handleReject(u.id, u.name)}
+                              >
+                                ✕ Reject
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Scraper Status */}
           <InstagramScraperCard />

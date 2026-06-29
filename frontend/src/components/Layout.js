@@ -89,7 +89,7 @@ export default function Layout({ children }) {
             }}>📸</div>
             {(sidebarOpen || isMobile) && (
               <div>
-                <div style={{ fontWeight: 700, fontSize: '14px' }}>InstaTracker</div>
+                <div style={{ fontWeight: 700, fontSize: '14px' }}>Amplify</div>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Reel Analytics</div>
               </div>
             )}
@@ -184,7 +184,7 @@ export default function Layout({ children }) {
               background: 'var(--gradient)', display: 'flex',
               alignItems: 'center', justifyContent: 'center', fontSize: '14px',
             }}>📸</div>
-            <span style={{ fontWeight: 700, fontSize: '14px' }}>InstaTracker</span>
+            <span style={{ fontWeight: 700, fontSize: '14px' }}>Amplify</span>
           </div>
           <button
             onClick={toggleTheme}

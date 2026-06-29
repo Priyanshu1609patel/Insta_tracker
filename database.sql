@@ -262,5 +262,16 @@ UPDATE reels SET platform = 'tiktok'  WHERE reel_url ILIKE '%tiktok.com%' AND pl
 UPDATE reels SET platform = 'instagram' WHERE platform IS NULL;
 
 -- ============================================================
+-- MIGRATION: Registration approval flow
+-- Add status column to users (pending/approved/rejected)
+-- ============================================================
+
+-- All existing users default to 'approved' so they can still log in
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'approved';
+
+-- Ensure existing users are approved
+UPDATE users SET status = 'approved' WHERE status IS NULL;
+
+-- ============================================================
 -- DONE! Your database is ready.
 -- ============================================================

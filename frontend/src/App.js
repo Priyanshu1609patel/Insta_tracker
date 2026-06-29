@@ -1,8 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import AdminLogin from './pages/AdminLogin';
 import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
 import ClientDetail from './pages/ClientDetail';
@@ -34,7 +36,7 @@ function rolePath(role) {
 function AdminRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <Spinner />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/admin-login" replace />;
   if (user.role !== 'admin') return <Navigate to={rolePath(user.role)} replace />;
   return children;
 }
@@ -70,8 +72,15 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Landing page */}
+          <Route path="/" element={<LandingPage />} />
+
+          {/* Public auth */}
           <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+
+          {/* Admin login — hidden path, not linked publicly */}
+          <Route path="/admin-login" element={<PublicRoute><AdminLogin /></PublicRoute>} />
 
           {/* Admin */}
           <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
@@ -86,7 +95,7 @@ export default function App() {
           {/* Client user portal */}
           <Route path="/client-portal" element={<ClientUserRoute><ClientPortal /></ClientUserRoute>} />
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -138,7 +138,7 @@ export default function ClientPortal() {
             alignItems: 'center', justifyContent: 'center', fontSize: '15px',
           }}>📸</div>
           <div style={{ display: 'none' }} className="portal-brand">
-            <div style={{ fontWeight: 700, fontSize: '14px' }}>InstaTracker</div>
+            <div style={{ fontWeight: 700, fontSize: '14px' }}>Amplify</div>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Client Portal</div>
           </div>
           {client && (
