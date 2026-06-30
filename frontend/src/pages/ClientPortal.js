@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import CurrencyDropdown from '../components/CurrencyDropdown';
 import API from '../utils/api';
+import { LogoIcon, ReelsIcon, EyeIcon, EarningsIcon } from '../components/Icons';
 import { formatViews, formatCurrency, exactViews, exactCurrency, timeAgo } from '../utils/format';
 import { useCurrency } from '../hooks/useCurrency';
 
 const FORMAT_OPTIONS = [
-  { value: 'indian', label: '🇮🇳 Indian',        desc: 'L / Cr'    },
-  { value: 'intl',   label: '🌐 International', desc: 'K / M / B' },
+  { value: 'indian', label: 'Indian',        desc: 'L / Cr'    },
+  { value: 'intl',   label: 'International', desc: 'K / M / B' },
   { value: 'exact',  label: '# Exact',           desc: 'Raw number' },
 ];
 
@@ -132,11 +133,9 @@ export default function ClientPortal() {
         position: 'sticky', top: 0, zIndex: 50, gap: '10px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-          <div style={{
-            width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
-            background: 'var(--gradient)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', fontSize: '15px',
-          }}>📸</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <LogoIcon size={32} />
+          </div>
           <div style={{ display: 'none' }} className="portal-brand">
             <div style={{ fontWeight: 700, fontSize: '14px' }}>Amplify</div>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Client Portal</div>
@@ -252,12 +251,12 @@ export default function ClientPortal() {
 
           {/* Stat cards */}
           <div className="grid-3" style={{ marginBottom: '28px' }}>
-            <StatCard icon="🎬" label="Total Reels"    color="#833AB4"
+            <StatCard icon={<ReelsIcon size={18} />} label="Total Reels"    color="#833AB4"
               value={reels.length.toString()} />
-            <StatCard icon="👁️" label="Total Views"    color="#F77737"
+            <StatCard icon={<EyeIcon size={18} />} label="Total Views"    color="#F77737"
               value={formatViews(totalViews, fmt)}
               sub={fmt !== 'exact' ? exactViews(totalViews) : null} />
-            <StatCard icon="💰" label="Total Earnings" color="#22c55e"
+            <StatCard icon={<EarningsIcon size={18} />} label="Total Earnings" color="#22c55e"
               value={formatCurrency(totalEarnings, fmt, currency, exchangeRate)}
               sub={fmt !== 'exact' ? exactCurrency(totalEarnings, currency, exchangeRate) : null} />
           </div>
@@ -276,7 +275,7 @@ export default function ClientPortal() {
 
             {reels.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-state-icon">🎬</div>
+                <div className="empty-state-icon"><ReelsIcon size={36} /></div>
                 <div className="empty-state-title">No reels tracked yet</div>
                 <div className="empty-state-desc">Your reels will appear here once your creator adds them</div>
               </div>

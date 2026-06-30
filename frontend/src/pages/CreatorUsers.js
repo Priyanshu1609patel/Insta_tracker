@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import API from '../utils/api';
+import { ClientsIcon, KeyIcon, DeleteIcon } from '../components/Icons';
 
 export default function CreatorUsers() {
   const [users, setUsers]       = useState([]);
@@ -218,7 +219,7 @@ export default function CreatorUsers() {
             </div>
           ) : users.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-icon">👤</div>
+              <div className="empty-state-icon"><ClientsIcon size={36} /></div>
               <div className="empty-state-title">No client users yet</div>
               <div className="empty-state-desc">Create a user above to give your client access to their data</div>
             </div>
@@ -272,17 +273,18 @@ export default function CreatorUsers() {
                                 setPasswordMsg(null);
                               }}
                               title="Change password"
-                              style={{ padding: '5px 10px' }}
+                              style={{ display: 'flex', alignItems: 'center', padding: '6px' }}
                             >
-                              🔑
+                              <KeyIcon size={12} />
                             </button>
                             <button
                               className="btn btn-danger btn-sm"
                               onClick={() => handleDelete(u.id, u.name)}
                               disabled={deleting === u.id}
-                              style={{ padding: '5px 10px' }}
+                              style={{ display: 'flex', alignItems: 'center', padding: '6px' }}
+                              title="Delete user"
                             >
-                              {deleting === u.id ? <span className="spinner" style={{ width: 11, height: 11 }} /> : '🗑️'}
+                              {deleting === u.id ? <span className="spinner" style={{ width: 11, height: 11 }} /> : <DeleteIcon size={12} />}
                             </button>
                           </div>
                         </td>

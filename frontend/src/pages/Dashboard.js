@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import CurrencyDropdown from '../components/CurrencyDropdown';
 import API from '../utils/api';
+import { ClientsIcon, ReelsIcon, EyeIcon, EarningsIcon, DownloadIcon, FlameIcon, AwardIcon } from '../components/Icons';
 import { formatViews, formatCurrency, timeAgo, exactViews, exactCurrency } from '../utils/format';
 import { useCurrency } from '../hooks/useCurrency';
 import {
@@ -77,8 +78,8 @@ export default function Dashboard() {
               loading={currencyLoading}
               lastUpdated={lastUpdated}
             />
-            <button className="btn btn-secondary" onClick={handleExport} disabled={exporting}>
-              {exporting ? <span className="spinner" /> : '⬇️'} Export CSV
+            <button className="btn btn-secondary" onClick={handleExport} disabled={exporting} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {exporting ? <span className="spinner" /> : <DownloadIcon />} Export CSV
             </button>
           </div>
         </div>
@@ -86,10 +87,10 @@ export default function Dashboard() {
         {/* Overview stats */}
         <div className="grid-4" style={{ marginBottom: '28px' }}>
           {[
-            { label: 'Total Clients', value: overview?.totalClients || 0, icon: '👥', color: '#833AB4' },
-            { label: 'Total Reels', value: overview?.totalReels || 0, icon: '🎬', color: '#E1306C' },
-            { label: 'Total Views', value: formatViews(overview?.totalViews || 0, fmt), icon: '👁️', color: '#F77737' },
-            { label: 'Total Earnings', value: formatCurrency(overview?.totalEarnings || 0, fmt, currency, exchangeRate), icon: '💰', color: '#22c55e' },
+            { label: 'Total Clients', value: overview?.totalClients || 0, icon: <ClientsIcon size={18} />, color: '#833AB4' },
+            { label: 'Total Reels', value: overview?.totalReels || 0, icon: <ReelsIcon size={18} />, color: '#E1306C' },
+            { label: 'Total Views', value: formatViews(overview?.totalViews || 0, fmt), icon: <EyeIcon size={18} />, color: '#F77737' },
+            { label: 'Total Earnings', value: formatCurrency(overview?.totalEarnings || 0, fmt, currency, exchangeRate), icon: <EarningsIcon size={18} />, color: '#22c55e' },
           ].map((stat) => (
             <div key={stat.label} className="stat-card" style={{ borderTop: `3px solid ${stat.color}` }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -114,7 +115,7 @@ export default function Dashboard() {
 
           {!clients || clients.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-icon">👥</div>
+              <div className="empty-state-icon"><ClientsIcon size={36} /></div>
               <div className="empty-state-title">No clients yet</div>
               <div className="empty-state-desc">Add your first client to start tracking</div>
               <button className="btn btn-primary" onClick={() => navigate('/clients')}>
@@ -191,8 +192,8 @@ function MilestoneAlerts({ clients }) {
 
   return (
     <div className="card">
-      <h2 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>
-        🔥 Milestone Reels
+      <h2 style={{ display: 'flex', alignItems: 'center', fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>
+        <FlameIcon size={18} style={{ marginRight: '6px' }} /> Milestone Reels
       </h2>
       {reels.map(reel => {
         const milestone = reel.views >= 1000000 ? '1M' : reel.views >= 500000 ? '500K' : '100K';
@@ -203,8 +204,8 @@ function MilestoneAlerts({ clients }) {
             border: '1px solid var(--banner-error-border)', borderRadius: '8px', marginBottom: '8px'
           }}>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: 600 }}>
-                🎉 {reel.client_name} — Crossed {milestone} views!
+              <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px', fontWeight: 600 }}>
+                <AwardIcon size={15} style={{ marginRight: '6px' }} /> {reel.client_name} — Crossed {milestone} views!
               </div>
               <a href={reel.reel_url} target="_blank" rel="noopener noreferrer"
                 style={{ fontSize: '12px', color: 'var(--text-muted)', textDecoration: 'none' }}>

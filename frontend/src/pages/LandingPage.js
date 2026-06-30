@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { LogoIcon, DashboardIcon, ClientsIcon, ShieldIcon, SyncIcon } from '../components/Icons';
 
 function rolePath(role) {
   if (role === 'admin') return '/admin';
@@ -297,13 +298,8 @@ export default function LandingPage() {
           
           {/* Brand Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }} onClick={() => navigate('/')}>
-            <div style={{
-              width: '44px', height: '44px', borderRadius: '14px',
-              background: 'var(--gradient)', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: '22px', boxShadow: '0 6px 18px rgba(225,48,108,0.4)',
-              position: 'relative'
-            }}>
-              📸
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <LogoIcon size={44} />
               <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '12px', height: '12px', borderRadius: '50%', background: '#10b981', border: '2.5px solid var(--bg)', boxShadow: '0 0 8px #10b981' }} />
             </div>
             <div>
@@ -457,10 +453,10 @@ export default function LandingPage() {
 
                 {/* Interactive Demo Navigation Tabs */}
                 <div style={{ display: 'flex', gap: '6px', background: 'var(--bg)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <button onClick={() => setActiveDemoTab('analytics')} className={`demo-tab-btn ${activeDemoTab === 'analytics' ? 'active' : ''}`}>📊 Analytics</button>
-                  <button onClick={() => setActiveDemoTab('portals')} className={`demo-tab-btn ${activeDemoTab === 'portals' ? 'active' : ''}`}>💼 Client Portals</button>
-                  <button onClick={() => setActiveDemoTab('ratecards')} className={`demo-tab-btn ${activeDemoTab === 'ratecards' ? 'active' : ''}`}>⚙️ Rate Cards</button>
-                  <button onClick={() => setActiveDemoTab('live_logs')} className={`demo-tab-btn ${activeDemoTab === 'live_logs' ? 'active' : ''}`}>⚡ Live Sync Log</button>
+                  <button onClick={() => setActiveDemoTab('analytics')} className={`demo-tab-btn ${activeDemoTab === 'analytics' ? 'active' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><DashboardIcon size={14} /> Analytics</button>
+                  <button onClick={() => setActiveDemoTab('portals')} className={`demo-tab-btn ${activeDemoTab === 'portals' ? 'active' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ClientsIcon size={14} /> Client Portals</button>
+                  <button onClick={() => setActiveDemoTab('ratecards')} className={`demo-tab-btn ${activeDemoTab === 'ratecards' ? 'active' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ShieldIcon size={14} /> Rate Cards</button>
+                  <button onClick={() => setActiveDemoTab('live_logs')} className={`demo-tab-btn ${activeDemoTab === 'live_logs' ? 'active' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><SyncIcon size={14} /> Live Sync Log</button>
                 </div>
               </div>
 
@@ -890,7 +886,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '24px' }}>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>📸</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LogoIcon size={36} /></div>
             <span style={{ fontWeight: 900, fontSize: '19px', letterSpacing: '-0.5px' }}>Amplify Agency OS</span>
           </div>
 

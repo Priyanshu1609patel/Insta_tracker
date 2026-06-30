@@ -1,8 +1,8 @@
 import React from 'react';
 
 const CURRENCY_OPTIONS = [
-  { value: 'INR', label: '🇮🇳 INR', desc: 'Indian Rupee' },
-  { value: 'USD', label: '🇺🇸 USD', desc: 'US Dollar' },
+  { value: 'INR', label: '₹ INR', desc: 'Indian Rupee' },
+  { value: 'USD', label: '$ USD', desc: 'US Dollar' },
 ];
 
 function CurrencyDropdown({ currency, onChange, exchangeRate, loading, lastUpdated }) {

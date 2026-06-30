@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ShieldIcon } from '../components/Icons';
 
 function EyeBtn({ show, onToggle }) {
   return (
@@ -71,8 +72,10 @@ export default function AdminLogin() {
             width: '60px', height: '60px', borderRadius: '16px',
             background: 'var(--gradient)', display: 'flex',
             alignItems: 'center', justifyContent: 'center',
-            fontSize: '28px', margin: '0 auto 16px',
-          }}>👑</div>
+            color: '#ffffff', margin: '0 auto 16px',
+          }}>
+            <ShieldIcon size={28} />
+          </div>
           <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Admin Access</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '6px' }}>
             Restricted area — authorized personnel only

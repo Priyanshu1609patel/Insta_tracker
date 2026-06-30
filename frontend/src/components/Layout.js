@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { LogoIcon, ShieldIcon, DashboardIcon, ClientsIcon, ReelsIcon, KeyIcon, LogOutIcon } from './Icons';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -38,12 +39,12 @@ export default function Layout({ children }) {
   const toggleTheme  = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   const navItems = user?.role === 'admin'
-    ? [{ path: '/admin', label: 'Admin Panel', icon: '👑' }]
+    ? [{ path: '/admin', label: 'Admin Panel', icon: <ShieldIcon /> }]
     : [
-        { path: '/dashboard', label: 'Dashboard',   icon: '📊' },
-        { path: '/clients',   label: 'Clients',      icon: '👥' },
-        { path: '/reels',     label: 'All Reels',    icon: '🎬' },
-        { path: '/users',     label: 'Client Users', icon: '🔑' },
+        { path: '/dashboard', label: 'Dashboard',   icon: <DashboardIcon /> },
+        { path: '/clients',   label: 'Clients',      icon: <ClientsIcon /> },
+        { path: '/reels',     label: 'All Reels',    icon: <ReelsIcon /> },
+        { path: '/users',     label: 'Client Users', icon: <KeyIcon /> },
       ];
 
   return (
@@ -81,12 +82,9 @@ export default function Layout({ children }) {
         {/* Logo */}
         <div style={{ padding: '18px 14px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '34px', height: '34px', borderRadius: '9px',
-              background: 'var(--gradient)', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-              fontSize: '17px', flexShrink: 0,
-            }}>📸</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <LogoIcon size={34} />
+            </div>
             {(sidebarOpen || isMobile) && (
               <div>
                 <div style={{ fontWeight: 700, fontSize: '14px' }}>Amplify</div>
@@ -147,7 +145,9 @@ export default function Layout({ children }) {
             background: 'none', border: 'none', cursor: 'pointer',
             color: 'var(--danger)', fontSize: '13px',
           }}>
-            <span style={{ fontSize: '17px' }}>🚪</span>
+            <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+              <LogOutIcon size={17} />
+            </span>
             {(sidebarOpen || isMobile) && <span>Logout</span>}
           </button>
         </div>
@@ -179,11 +179,9 @@ export default function Layout({ children }) {
             }}
           >☰</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{
-              width: '28px', height: '28px', borderRadius: '7px',
-              background: 'var(--gradient)', display: 'flex',
-              alignItems: 'center', justifyContent: 'center', fontSize: '14px',
-            }}>📸</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <LogoIcon size={28} />
+            </div>
             <span style={{ fontWeight: 700, fontSize: '14px' }}>Amplify</span>
           </div>
           <button

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import API from '../utils/api';
 import { formatViews, formatCurrency, timeAgo } from '../utils/format';
+import { ReelsIcon, DownloadIcon, SyncIcon, DeleteIcon } from '../components/Icons';
 
 export default function Reels() {
   const [reels, setReels] = useState([]);
@@ -95,8 +96,8 @@ export default function Reels() {
               {reels.length} reels · {formatViews(totalViews)} views · {formatCurrency(totalEarnings)} earned
             </p>
           </div>
-          <button className="btn btn-secondary" onClick={handleExport} disabled={exporting}>
-            {exporting ? <span className="spinner" /> : '⬇️'} Export CSV
+          <button className="btn btn-secondary" onClick={handleExport} disabled={exporting} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {exporting ? <span className="spinner" /> : <DownloadIcon />} Export CSV
           </button>
         </div>
 
@@ -150,7 +151,7 @@ export default function Reels() {
             </div>
           ) : reels.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-icon">🎬</div>
+              <div className="empty-state-icon"><ReelsIcon size={36} /></div>
               <div className="empty-state-title">No reels found</div>
               <div className="empty-state-desc">Add reels through a client page</div>
             </div>
@@ -220,15 +221,17 @@ export default function Reels() {
                           onClick={() => handleSync(reel.id)}
                           disabled={syncingId === reel.id}
                           title="Sync views now"
+                          style={{ display: 'flex', alignItems: 'center', padding: '6px' }}
                         >
-                          {syncingId === reel.id ? <span className="spinner" /> : '🔄'}
+                          {syncingId === reel.id ? <span className="spinner" style={{ width: 11, height: 11 }} /> : <SyncIcon size={12} />}
                         </button>
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => handleDelete(reel.id)}
                           title="Delete reel"
+                          style={{ display: 'flex', alignItems: 'center', padding: '6px' }}
                         >
-                          🗑️
+                          <DeleteIcon size={12} />
                         </button>
                       </div>
                     </td>

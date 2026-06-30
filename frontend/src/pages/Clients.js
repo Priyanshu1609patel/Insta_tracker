@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import API from '../utils/api';
 import { formatViews, formatCurrency, formatDate } from '../utils/format';
 import { useCurrency } from '../hooks/useCurrency';
+import { ClientsIcon, ReelsIcon, EyeIcon, EarningsIcon, EditIcon, DeleteIcon } from '../components/Icons';
 
 export default function Clients() {
   const [clients, setClients] = useState([]);
@@ -149,7 +150,7 @@ export default function Clients() {
           <div style={{ textAlign: 'center', padding: '60px' }}><span className="spinner" style={{ width: 40, height: 40 }} /></div>
         ) : clients.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">👥</div>
+            <div className="empty-state-icon"><ClientsIcon size={36} /></div>
             <div className="empty-state-title">No clients yet</div>
             <div className="empty-state-desc">Add your first client to start tracking reels</div>
             <button className="btn btn-primary" onClick={openAdd}>+ Add First Client</button>
@@ -189,17 +190,17 @@ export default function Clients() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                    <button className="btn btn-secondary btn-sm" onClick={(e) => openEdit(client, e)}>✏️</button>
-                    <button className="btn btn-danger btn-sm" onClick={(e) => handleDelete(client.id, e)}>🗑️</button>
+                    <button className="btn btn-secondary btn-sm" onClick={(e) => openEdit(client, e)} style={{ display: 'flex', alignItems: 'center', padding: '6px' }} title="Edit"><EditIcon size={13} /></button>
+                    <button className="btn btn-danger btn-sm" onClick={(e) => handleDelete(client.id, e)} style={{ display: 'flex', alignItems: 'center', padding: '6px' }} title="Delete"><DeleteIcon size={13} /></button>
                   </div>
                 </div>
 
                 {/* Stats */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                   {[
-                    { label: 'Reels', value: client.total_reels || 0, icon: '🎬' },
-                    { label: 'Views', value: formatViews(client.total_views || 0), icon: '👁️' },
-                    { label: 'Earnings', value: formatCurrency(client.total_earnings || 0), icon: '💰' },
+                    { label: 'Reels', value: client.total_reels || 0, icon: <ReelsIcon size={18} /> },
+                    { label: 'Views', value: formatViews(client.total_views || 0), icon: <EyeIcon size={18} /> },
+                    { label: 'Earnings', value: formatCurrency(client.total_earnings || 0), icon: <EarningsIcon size={18} /> },
                   ].map(stat => (
                     <div key={stat.label} style={{
                       background: 'var(--bg-card2)', borderRadius: '12px',

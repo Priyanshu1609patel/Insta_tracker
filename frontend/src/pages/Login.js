@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { LogoIcon } from '../components/Icons';
 
 // Eye toggle button
 function EyeBtn({ show, onToggle }) {
@@ -69,12 +70,7 @@ export default function Login() {
       <div style={{ width: '100%', maxWidth: '400px' }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            width: '64px', height: '64px', borderRadius: '16px',
-            background: 'var(--gradient)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            fontSize: '32px', margin: '0 auto 16px'
-          }}>📸</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><LogoIcon size={64} /></div>
           <h1 style={{ fontSize: '28px', fontWeight: 800 }}>
             <span className="gradient-text">Amplify</span>
           </h1>

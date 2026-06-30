@@ -2,15 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import API from '../utils/api';
+import { LogoIcon, ShieldIcon, LogOutIcon, CheckCircleIcon, XCircleIcon, AlertSirenIcon, WarningIcon, DownloadIcon, SyncIcon, ClientsIcon, ClockIcon, SearchIcon, SunIcon, MoonIcon } from '../components/Icons';
 
 // ── Instagram Session Banner (same as before) ────────────────
 function getSessionTheme(health) {
-  if (!health) return { bg: 'var(--banner-success-bg)', border: 'var(--banner-success-border)', textColor: 'var(--banner-success-text)', icon: '✅', label: 'Active' };
-  if (!health.valid) return { bg: 'var(--banner-error-bg)', border: 'var(--banner-error-border)', textColor: 'var(--banner-error-text)', icon: '❌', label: 'Expired' };
+  if (!health) return { bg: 'var(--banner-success-bg)', border: 'var(--banner-success-border)', textColor: 'var(--banner-success-text)', icon: <CheckCircleIcon size={16} />, label: 'Active' };
+  if (!health.valid) return { bg: 'var(--banner-error-bg)', border: 'var(--banner-error-border)', textColor: 'var(--banner-error-text)', icon: <XCircleIcon size={16} />, label: 'Expired' };
   const days = health.daysRemaining;
-  if (days != null && days <= 7)  return { bg: 'var(--alert-error-bg)',   border: 'var(--alert-error-border)',   textColor: 'var(--alert-error-text)',   icon: '🚨', label: 'Expires very soon' };
-  if (days != null && days <= 15) return { bg: 'var(--alert-warning-bg)', border: 'var(--alert-warning-border)', textColor: 'var(--alert-warning-text)', icon: '⚠️', label: 'Expires soon' };
-  return { bg: 'var(--banner-success-bg)', border: 'var(--banner-success-border)', textColor: 'var(--banner-success-text)', icon: '✅', label: 'Active' };
+  if (days != null && days <= 7)  return { bg: 'var(--alert-error-bg)',   border: 'var(--alert-error-border)',   textColor: 'var(--alert-error-text)',   icon: <AlertSirenIcon size={16} />, label: 'Expires very soon' };
+  if (days != null && days <= 15) return { bg: 'var(--alert-warning-bg)', border: 'var(--alert-warning-border)', textColor: 'var(--alert-warning-text)', icon: <WarningIcon size={16} />, label: 'Expires soon' };
+  return { bg: 'var(--banner-success-bg)', border: 'var(--banner-success-border)', textColor: 'var(--banner-success-text)', icon: <CheckCircleIcon size={16} />, label: 'Active' };
 }
 
 function InstagramScraperCard() {
@@ -55,7 +56,7 @@ function InstagramScraperCard() {
       setStatus(r.data);
       loadHealth();
     } catch (err) {
-      setMsg('❌ ' + (err.response?.data?.error || 'Failed to save'));
+      setMsg('Error: ' + (err.response?.data?.error || 'Failed to save'));
     } finally { setLoading(false); }
   };
 
@@ -101,11 +102,12 @@ function InstagramScraperCard() {
               onClick={handleTest}
               disabled={testing}
               title="Make a live call to Instagram to verify session right now"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              {testing ? <span className="spinner" style={{ width: 12, height: 12 }} /> : '🔍 Test Now'}
+              {testing ? <span className="spinner" style={{ width: 12, height: 12 }} /> : <><SearchIcon size={12} /> Test Now</>}
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={() => setShowForm(v => !v)}>
-              🔄 Update Session
+            <button className="btn btn-secondary btn-sm" onClick={() => setShowForm(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <SyncIcon size={12} /> Update Session
             </button>
           </div>
         </div>
@@ -117,19 +119,25 @@ function InstagramScraperCard() {
             border: `1px solid ${days <= 7 ? 'var(--alert-error-border)' : 'var(--alert-warning-border)'}`,
             borderRadius: '8px', fontSize: '13px',
             color: days <= 7 ? 'var(--alert-error-text)' : 'var(--alert-warning-text)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}>
-            {days <= 7
-              ? '🚨 Session expiring in less than a week! Update it now to avoid scraping failures for your clients.'
-              : '⚠️ Session expiring soon. Refresh your Instagram sessionid cookie before it expires.'}
-            <div style={{ marginTop: '6px', fontSize: '12px', opacity: 0.8 }}>
-              Go to instagram.com → F12 → Application → Cookies → copy <strong>sessionid</strong> → click "Update Session"
+            {days <= 7 ? <AlertSirenIcon size={15} /> : <WarningIcon size={15} />}
+            <div>
+              {days <= 7
+                ? 'Session expiring in less than a week! Update it now to avoid scraping failures for your clients.'
+                : 'Session expiring soon. Refresh your Instagram sessionid cookie before it expires.'}
+              <div style={{ marginTop: '6px', fontSize: '12px', opacity: 0.8 }}>
+                Go to instagram.com → F12 → Application → Cookies → copy <strong>sessionid</strong> → click "Update Session"
+              </div>
             </div>
           </div>
         )}
 
         {health?.valid === false && (
-          <div className="alert alert-error" style={{ marginTop: '12px', marginBottom: 0 }}>
-            ❌ Session expired or rejected by Instagram. Please paste a fresh sessionid to restore scraping.
+          <div className="alert alert-error" style={{ marginTop: '12px', marginBottom: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <XCircleIcon size={15} /> Session expired or rejected by Instagram. Please paste a fresh sessionid to restore scraping.
           </div>
         )}
 
@@ -164,8 +172,8 @@ function InstagramScraperCard() {
       borderRadius: '12px', padding: '20px', marginBottom: '28px',
       color: 'var(--banner-error-text)'
     }}>
-      <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '8px' }}>
-        🔐 Connect Instagram (One-Time Setup)
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '16px', marginBottom: '8px' }}>
+        <ShieldIcon size={16} /> Connect Instagram (One-Time Setup)
       </div>
       <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: '1.8' }}>
         1. Open <strong>instagram.com</strong> in Chrome and log in<br />
@@ -245,25 +253,26 @@ export default function AdminPanel() {
   const handleApprove = async (id, name) => {
     try {
       await API.post(`/admin/users/${id}/approve`);
-      setActionMsg(`✅ ${name} has been approved`);
+      setActionMsg(`Approved ${name}`);
       loadPending();
       loadUsers();
       setTimeout(() => setActionMsg(''), 4000);
-    } catch (err) {
-      setActionMsg('❌ Failed to approve user');
+    } catch {
+      setActionMsg('Failed to approve user');
       setTimeout(() => setActionMsg(''), 4000);
     }
   };
 
-  const handleReject = async (id, name) => {
-    if (!window.confirm(`Reject ${name}'s registration?`)) return;
+  const handleReject = async (userId, userName) => {
+    if (userName && !window.confirm(`Reject ${userName}'s registration?`)) return;
+    setActionMsg('');
     try {
-      await API.post(`/admin/users/${id}/reject`);
-      setActionMsg(`${name} has been rejected`);
-      loadPending();
+      await API.post(`/admin/users/${userId}/reject`);
+      setPendingUsers(prev => prev.filter(u => u.id !== userId));
+      setActionMsg('User has been rejected');
       setTimeout(() => setActionMsg(''), 4000);
-    } catch (err) {
-      setActionMsg('❌ Failed to reject user');
+    } catch {
+      setActionMsg('Failed to reject user');
       setTimeout(() => setActionMsg(''), 4000);
     }
   };
@@ -297,11 +306,7 @@ export default function AdminPanel() {
         {/* Logo */}
         <div style={{ padding: '18px 14px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '34px', height: '34px', borderRadius: '9px',
-              background: 'var(--gradient)', display: 'flex',
-              alignItems: 'center', justifyContent: 'center', fontSize: '17px',
-            }}>📸</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LogoIcon size={34} /></div>
             <div>
               <div style={{ fontWeight: 700, fontSize: '14px' }}>Amplify</div>
               <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Admin Panel</div>
@@ -317,7 +322,7 @@ export default function AdminPanel() {
             background: 'rgba(225,48,108,0.13)', color: 'var(--primary)',
             fontWeight: 600, fontSize: '13px',
           }}>
-            <span style={{ fontSize: '17px' }}>👑</span>
+            <span style={{ display: 'flex', alignItems: 'center' }}><ShieldIcon size={17} /></span>
             <span>Admin Panel</span>
           </div>
         </nav>
@@ -333,7 +338,9 @@ export default function AdminPanel() {
               color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '4px',
             }}
           >
-            <span style={{ fontSize: '17px' }}>{theme === 'dark' ? '☀️' : '🌙'}</span>
+            <span style={{ display: 'flex', alignItems: 'center' }}>
+              {theme === 'dark' ? <SunIcon size={17} /> : <MoonIcon size={17} />}
+            </span>
             <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
           </button>
 
@@ -349,7 +356,7 @@ export default function AdminPanel() {
             background: 'none', border: 'none', cursor: 'pointer',
             color: 'var(--danger)', fontSize: '13px',
           }}>
-            <span style={{ fontSize: '17px' }}>🚪</span>
+            <span style={{ display: 'flex', alignItems: 'center' }}><LogOutIcon size={17} /></span>
             <span>Logout</span>
           </button>
         </div>
@@ -364,13 +371,13 @@ export default function AdminPanel() {
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', fontSize: '20px', padding: '4px 6px', display: 'flex', alignItems: 'center' }}
           >☰</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '7px', background: 'var(--gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>📸</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LogoIcon size={28} /></div>
             <span style={{ fontWeight: 700, fontSize: '14px' }}>Admin Panel</span>
           </div>
           <button
             onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', padding: '4px' }}
-          >{theme === 'dark' ? '☀️' : '🌙'}</button>
+            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', color: 'var(--text)' }}
+          >{theme === 'dark' ? <SunIcon size={18} /> : <MoonIcon size={18} />}</button>
         </div>
         <div className="page-pad" style={{ maxWidth: '1000px' }}>
           {/* Header */}
@@ -383,7 +390,8 @@ export default function AdminPanel() {
 
           {/* Action message */}
           {actionMsg && (
-            <div className={`alert ${actionMsg.startsWith('❌') ? 'alert-error' : 'alert-success'}`} style={{ marginBottom: '20px' }}>
+            <div className={`alert ${actionMsg.includes('Failed') ? 'alert-error' : 'alert-success'}`} style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {actionMsg.includes('Failed') ? <XCircleIcon size={15} /> : <CheckCircleIcon size={15} />}
               {actionMsg}
             </div>
           )}
@@ -393,7 +401,7 @@ export default function AdminPanel() {
             <div className="card" style={{ marginBottom: '24px', border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
                 <h2 style={{ fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span>⏳</span> Pending Approvals
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><ClockIcon size={14} /> Pending Approvals</span>
                   {pendingUsers.length > 0 && (
                     <span style={{
                       fontSize: '12px', fontWeight: 700,
@@ -448,18 +456,11 @@ export default function AdminPanel() {
                           </td>
                           <td>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                              <button
-                                className="btn btn-sm"
-                                onClick={() => handleApprove(u.id, u.name)}
-                                style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}
-                              >
-                                ✓ Approve
+                              <button className="btn btn-secondary btn-sm" onClick={() => handleApprove(u.id, u.name)} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: '6px' }}>
+                                <CheckCircleIcon size={12} /> Approve
                               </button>
-                              <button
-                                className="btn btn-sm btn-danger"
-                                onClick={() => handleReject(u.id, u.name)}
-                              >
-                                ✕ Reject
+                              <button className="btn btn-danger btn-sm" onClick={() => handleReject(u.id, u.name)} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <XCircleIcon size={12} /> Reject
                               </button>
                             </div>
                           </td>
@@ -496,7 +497,7 @@ export default function AdminPanel() {
               </div>
             ) : users.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-state-icon">👥</div>
+                <div className="empty-state-icon"><ClientsIcon size={36} /></div>
                 <div className="empty-state-title">No creators yet</div>
                 <div className="empty-state-desc">Users who register will appear here</div>
               </div>

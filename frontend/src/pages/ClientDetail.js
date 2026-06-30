@@ -5,12 +5,13 @@ import CurrencyDropdown from '../components/CurrencyDropdown';
 import API from '../utils/api';
 import { formatViews, formatCurrency, exactViews, exactCurrency, timeAgo, formatDate } from '../utils/format';
 import { useCurrency } from '../hooks/useCurrency';
+import { EditIcon, CalendarIcon, ReelsIcon, EyeIcon, EarningsIcon, SyncIcon, DeleteIcon } from '../components/Icons';
 
 // ── Number format dropdown ────────────────────────────────────
 const FORMAT_OPTIONS = [
-  { value: 'intl',   label: '🌐 International', desc: 'K / M / B' },
-  { value: 'indian', label: '🇮🇳 Indian',        desc: 'L / Cr'   },
-  { value: 'exact',  label: '# Exact',           desc: 'Raw number' },
+  { value: 'intl',   label: 'International', desc: 'K / M / B' },
+  { value: 'indian', label: 'Indian',        desc: 'L / Cr'   },
+  { value: 'exact',  label: 'Exact',           desc: 'Raw number' },
 ];
 
 function FormatDropdown({ value, onChange }) {
@@ -74,7 +75,7 @@ function ConfirmUpdateModal({ oldViews, newViews, onConfirm, onCancel, saving })
         borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '400px',
         boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
       }}>
-        <div style={{ fontSize: '22px', marginBottom: '10px', textAlign: 'center' }}>✏️</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}><EditIcon size={24} /></div>
         <h3 style={{ fontSize: '17px', fontWeight: 700, textAlign: 'center', marginBottom: '6px' }}>
           Update Views Manually?
         </h3>
@@ -143,7 +144,7 @@ function ConfirmDateModal({ oldDate, newDate, onConfirm, onCancel, saving }) {
         borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '400px',
         boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
       }}>
-        <div style={{ fontSize: '22px', marginBottom: '10px', textAlign: 'center' }}>📅</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}><CalendarIcon size={24} /></div>
         <h3 style={{ fontSize: '17px', fontWeight: 700, textAlign: 'center', marginBottom: '6px' }}>
           Update Reel Date?
         </h3>
@@ -256,9 +257,9 @@ function ReelRow({ reel, fmt, currency, exchangeRate, syncingId, onSync, onDelet
               </span>
               <button
                 onClick={() => setEditingViews({ reelId: reel.id, value: reel.views })}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '11px', padding: '1px 3px' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '1px 3px', display: 'flex', alignItems: 'center' }}
                 title="Edit manually"
-              >✏️</button>
+              ><EditIcon size={11} /></button>
             </div>
             {fmt !== 'exact' && (
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
@@ -313,9 +314,9 @@ function ReelRow({ reel, fmt, currency, exchangeRate, syncingId, onSync, onDelet
             {!reel._pending && (
               <button
                 onClick={() => setEditingDate({ reelId: reel.id, value: reel.reel_date || todayStr })}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '11px', padding: '1px 3px' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '1px 3px', display: 'flex', alignItems: 'center' }}
                 title="Edit date"
-              >✏️</button>
+              ><EditIcon size={11} /></button>
             )}
           </div>
         )}
@@ -334,18 +335,18 @@ function ReelRow({ reel, fmt, currency, exchangeRate, syncingId, onSync, onDelet
             onClick={() => onSync(reel.id)}
             disabled={syncingId === reel.id}
             title={`Sync from ${platform === 'tiktok' ? 'TikTok' : 'Instagram'}`}
-            style={{ padding: '5px 9px' }}
+            style={{ padding: '5px 9px', display: 'flex', alignItems: 'center' }}
           >
             {syncingId === reel.id
               ? <span className="spinner" style={{ width: 12, height: 12 }} />
-              : '🔄'}
+              : <SyncIcon size={12} />}
           </button>
           <button
             className="btn btn-danger btn-sm"
             onClick={() => onDelete(reel.id)}
             title="Delete reel"
-            style={{ padding: '5px 9px' }}
-          >🗑️</button>
+            style={{ padding: '5px 9px', display: 'flex', alignItems: 'center' }}
+          ><DeleteIcon size={12} /></button>
         </div>
       </td>
     </tr>
@@ -661,17 +662,17 @@ export default function ClientDetail() {
         {/* ── Stat Cards ── */}
         <div className="grid-3" style={{ marginBottom: '20px' }}>
           <StatCard
-            icon="🎬" label="Total Reels" color="#833AB4"
+            icon={<ReelsIcon size={18} />} label="Total Reels" color="#833AB4"
             formatted={reels.length.toString()}
             exact={null}
           />
           <StatCard
-            icon="👁️" label="Total Views" color="#F77737"
+            icon={<EyeIcon size={18} />} label="Total Views" color="#F77737"
             formatted={formatViews(totalViews, fmt)}
             exact={exactViews(totalViews)}
           />
           <StatCard
-            icon="💰" label="Total Earnings" color="#22c55e"
+            icon={<EarningsIcon size={18} />} label="Total Earnings" color="#22c55e"
             formatted={formatCurrency(totalEarnings, fmt, currency, exchangeRate)}
             exact={exactCurrency(totalEarnings, currency, exchangeRate)}
           />
@@ -762,7 +763,7 @@ export default function ClientDetail() {
           {/* Reels table */}
           {reels.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-icon">🎬</div>
+              <div className="empty-state-icon"><ReelsIcon size={36} /></div>
               <div className="empty-state-title">No reels yet</div>
               <div className="empty-state-desc">Paste an Instagram or TikTok reel URL to start tracking views</div>
               <button className="btn btn-primary" onClick={() => setShowAddReel(true)}>+ Add First Reel</button>
