@@ -37,12 +37,29 @@ async function seedAdmin() {
   }
 }
 
-// Middleware
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'];
-if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL);
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173',
+  'https://amplify.lumoslogic.com'
+];
+
+if (process.env.FRONTEND_URL) {
+  const envOrigins = process.env.FRONTEND_URL.split(',').map(url => url.trim());
+  envOrigins.forEach(origin => {
+    if (origin) allowedOrigins.push(origin);
+  });
+}
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    const isAllowed = allowedOrigins.some(allowed => {
+      return allowed.replace(/\/$/, '') === normalizedOrigin;
+    });
+    callback(null, isAllowed);
+  },
   credentials: true
 }));
 app.use(express.json());

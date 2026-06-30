@@ -48,7 +48,7 @@ const testimonials = [
 export default function LandingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const theme = 'dark';
   const [mobileMenu, setMobileMenu] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
   const [activeDemoTab, setActiveDemoTab] = useState('analytics');
@@ -102,9 +102,9 @@ export default function LandingPage() {
   }, [calcClients]);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('theme', 'dark');
+  }, []);
 
   useEffect(() => {
     if (user) navigate(rolePath(user.role), { replace: true });
@@ -346,19 +346,10 @@ export default function LandingPage() {
               Get Started Free →
             </Link>
 
-            <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-              title="Toggle Light/Dark Theme"
-              style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: '10px', cursor: 'pointer', fontSize: '16px', padding: '9px 13px', color: 'var(--text)', transition: 'all 0.2s' }}>
-              {theme === 'dark' ? '☀️' : '🌙'}
-            </button>
           </div>
 
           {/* Mobile Controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} className="landing-mobile-nav">
-            <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-              style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', padding: '7px 11px', color: 'var(--text)' }}>
-              {theme === 'dark' ? '☀️' : '🌙'}
-            </button>
             <button onClick={() => setMobileMenu(v => !v)}
               style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--text)', fontSize: '20px', padding: '7px 13px' }}>
               {mobileMenu ? '✕' : '☰'}
